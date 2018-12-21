@@ -191,6 +191,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
     mkdir(ScintiPEDir.c_str(), 0777);
     mkdir(EvtDisplayDir.c_str(), 0777);
     mkdir(HodoPEDir.c_str(), 0777);
+    mkdir(CellPEDir.c_str(), 0777);
 
 
     // Histograms
@@ -304,11 +305,11 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
     const double MinPECenter = -1.5;
     const double MaxPECenter = 18.5;
     const int NBinPECenter = MaxPECenter-MinPECenter;
-    TH1D* hPECenterForCTXY = new TH1D("hPECenterForCTXY", "PE center (using Z readout);Light yield (p.e.);Number of events", 100, -1.5, 98.5);
-    TH1D* hPECenterForCTXZ = new TH1D("hPECenterForCTXZ", "PE center (using Y readout);Light yield (p.e.);Number of events", 100, -1.5, 98.5);
+    TH1D* hPECenterForCTXY = new TH1D("hPECenterForCTXY", "PE center (using Z readout);Light yield (ch9) (p.e.);Number of events", 110, -1.5, 108.5);
+    TH1D* hPECenterForCTXZ = new TH1D("hPECenterForCTXZ", "PE center (using Y readout);Light yield (ch41) (p.e.);Number of events", 110, -1.5, 108.5);
 
-    TH1D* hPELeftForCTXY = new TH1D("hPELeftForCTXY", "PE left (using Z readout);Light yield (p.e.);Number of events", 20, -1.5, 18.5);
-    TH1D* hPELeftForCTXZ = new TH1D("hPELeftForCTXZ", "PE left (using Y readout);Light yield (p.e.);Number of events", 20, -1.5, 18.5);
+    TH1D* hPELeftForCTXY = new TH1D("hPELeftForCTXY", "PE left (using Z readout);Light yield (ch8) (p.e.);Number of events", 20, -1.5, 18.5);
+    TH1D* hPELeftForCTXZ = new TH1D("hPELeftForCTXZ", "PE left (using Y readout);Light yield (ch40) (p.e.);Number of events", 20, -1.5, 18.5);
 
 
     TH2D* hHodoHitMapWithProtoHitUp = new TH2D("hHodoHitMapWithProtoHitUp", "Upstream hodoscope hitmap with scinti. hit;cell # along X;cell # along Y;Number of events", NScifiEachHodo, MinHodoMap, MaxHodoMap, NScifiEachHodo, MinHodoMap, MaxHodoMap);
