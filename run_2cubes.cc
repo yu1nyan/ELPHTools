@@ -113,8 +113,9 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
     // constants
     gErrorIgnoreLevel = kError;
 
-    const array<double, 2> FitRangeCT = {0, 0.07};
+    const array<double, 2> FitRangeCT = {0, 0.16};
     const array<double, 2> FitRangeCTDarkCut = {0, 0.1};
+    const array<double, 2> FitRangePECenter = {20, 50};
 
     const double MinPEScatterCTCenter = -10;
     const double MaxPEScatterCTCenter = 100;
@@ -291,6 +292,10 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
         hPEProto[i] = new TH1D(histName.c_str(), histAxis.c_str(), NBinPEProto, MinPEProto, MaxPEProto);
     }
 
+    TH1D* hPECenterForCTXY = new TH1D("hPECenterForCTXY", "PE center (using Z readout);Light yield (p.e.);Number of events", NBinPEProto, MinPEProto, MaxPEProto);
+    TH1D* hPECenterForCTXZ = new TH1D("hPECenterForCTXZ", "PE center (using Y readout);Light yield (p.e.);Number of events", NBinPEProto, MinPEProto, MaxPEProto);
+
+
     TH2D* hHodoHitMapWithProtoHitUp = new TH2D("hHodoHitMapWithProtoHitUp", "Upstream hodoscope hitmap with scinti. hit;cell # along X;cell # along Y;Number of events", NScifiEachHodo, MinHodoMap, MaxHodoMap, NScifiEachHodo, MinHodoMap, MaxHodoMap);
     TH2D* hHodoHitMapWithProtoHitDown = new TH2D("hHodoHitMapWithProtoHitDown", "Downstream hodoscope hitmap with scinti. hit;cell # along X;cell # along Y;Number of events", NScifiEachHodo, MinHodoMap, MaxHodoMap, NScifiEachHodo, MinHodoMap, MaxHodoMap);
 
@@ -352,12 +357,15 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
     }
 
     const int NBinCT = 100;
-    const double MaxCT = 1.0;
-    TH1D* hCrossTalkXZ = new TH1D("hCrossTalkXZ", "L.Y. ratio left/center (using Y readout);L.Y. left(ch40)/center(ch41);Number of events", NBinCT, 0.0, MaxCT);
-    TH1D* hCrossTalkXY = new TH1D("hCrossTalkXY", "L.Y. ratio left/center (using Z readout);L.Y. left(ch8)/center(ch9);Number of events", NBinCT, 0.0, MaxCT);
+    const double MinCT = -0.1;
+    const double MaxCT = 0.4;
+    TH1D* hCrossTalkXZ = new TH1D("hCrossTalkXZ", "L.Y. ratio left/center (using Y readout);L.Y. left(ch40)/center(ch41);Number of events", NBinCT, MinCT, MaxCT);
+    TH1D* hCrossTalkXY = new TH1D("hCrossTalkXY", "L.Y. ratio left/center (using Z readout);L.Y. left(ch8)/center(ch9);Number of events", NBinCT, MinCT, MaxCT);
 
-    TH1D* hCrossTalkXYDarkCut = new TH1D("hCrossTalkXYDarkCut", "L.Y. ratio left/center (using Z readout, Dark count cut);L.Y. left(ch8)/center(ch9);Number of events", NBinCT, 0.0, MaxCT);
-    TH1D* hCrossTalkXZDarkCut = new TH1D("hCrossTalkXZDarkCut", "L.Y. ratio left/center (using Y readout, Dark count cut);L.Y. left(ch40)/center(ch41);Number of events", NBinCT, 0.0, MaxCT);
+    TH1D* hCrossTalkXYDarkCut = new TH1D("hCrossTalkXYDarkCut", "L.Y. ratio left/center (using Z readout, Dark count cut);L.Y. left(ch8)/center(ch9);Number of events", NBinCT, MinCT, MaxCT);
+    TH1D* hCrossTalkXZDarkCut = new TH1D("hCrossTalkXZDarkCut", "L.Y. ratio left/center (using Y readout, Dark count cut);L.Y. left(ch40)/center(ch41);Number of events", NBinCT, MinCT, MaxCT);
+
+
 
     const int GapGraphMax = 50000 * 30;
     TH1D* hGapCount1s = new TH1D("hGapCount1s", "Gap count (hodo & proto1s);event # ;gap count", GapGraphMax, 0, GapGraphMax);
@@ -745,6 +753,9 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
 
                 scatterCTXY->SetPoint(countCTPoint, centerPEXY, leftPEXY);
                 scatterCTXZ->SetPoint(countCTPoint, centerPEXZ, leftPEXZ);
+
+                hPECenterForCTXY->Fill(centerPEXY);
+                hPECenterForCTXZ->Fill(centerPEXZ);
                 countCTPoint++;
             }
 
@@ -956,56 +967,76 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
 
 
     // Cross talk
-
-
     nHistHori = 2;
     nHistVert = 1;
     canvas = new TCanvas("canvas", "", histWidth * nHistHori, histHeight * nHistVert);
     canvas->Divide(nHistHori, nHistVert);
     canvas->cd(1);
     hCrossTalkXY->Draw();
-    TF1* poisson = new TF1("poisson", "[0]*TMath::Poisson(x*[1], [2])", FitRangeCT[0], FitRangeCT[1]);
-    poisson->SetParameters(300, 100, 0.09);
-    hCrossTalkXY->Fit("poisson", "", "", FitRangeCT[0], FitRangeCT[1]);
+    TF1* poissonFix = new TF1("poissonFix", "[0]*TMath::Poisson(x*[1], [1]*[2])", FitRangeCT[0], FitRangeCT[1]);
+    poissonFix->SetParameters(300, 100, 0.04);
+    hCrossTalkXY->Fit("poissonFix", FitOption, "", FitRangeCT[0], FitRangeCT[1]);
     gStyle->SetOptStat(1110);
     gStyle->SetOptFit(111);
     changestatsBoxSize(hCrossTalkXY, 0.7, 0.99, 0.65, 0.935);
-
 
     canvas->cd(2);
     hCrossTalkXZ->Draw();
-    poisson->SetParameters(300, 100, 0.05);
-    hCrossTalkXZ->Fit("poisson", "", "", FitRangeCT[0], FitRangeCT[1]);
+    poissonFix->SetParameters(300, 100, 0.04);
+    hCrossTalkXZ->Fit("poissonFix", FitOption, "", FitRangeCT[0], FitRangeCT[1]);
     gStyle->SetOptStat(1110);
     gStyle->SetOptFit(111);
     changestatsBoxSize(hCrossTalkXY, 0.7, 0.99, 0.65, 0.935);
-
 
     figName = TString::Format("%sCrossTalk_%04d_%04d.%s", ResultDir.c_str(), runnum, subrun, outputFileType.c_str());
     canvas->SaveAs(figName);
     canvas->Clear();
+
 
     canvas = new TCanvas("canvas", "", histWidth * nHistHori, histHeight * nHistVert);
     canvas->Divide(nHistHori, nHistVert);
 
     canvas->cd(1);
     hCrossTalkXYDarkCut->Draw();
-    poisson->SetParameters(300, 100, 0.09);
-    hCrossTalkXYDarkCut->Fit("poisson", "", "", FitRangeCT[0], FitRangeCT[1]);
+    poissonFix->SetParameters(300, 100, 0.01);
+    hCrossTalkXYDarkCut->Fit("poissonFix", FitOption, "", FitRangeCTDarkCut[0], FitRangeCTDarkCut[1]);
     gStyle->SetOptStat(1110);
     gStyle->SetOptFit(111);
     changestatsBoxSize(hCrossTalkXY, 0.7, 0.99, 0.65, 0.935);
-
 
     canvas->cd(2);
     hCrossTalkXZDarkCut->Draw();
-    poisson->SetParameters(300, 100, 0.05);
-    hCrossTalkXZDarkCut->Fit("poisson", "", "", FitRangeCT[0], FitRangeCT[1]);
+    poissonFix->SetParameters(300, 100, 0.01);
+    hCrossTalkXZDarkCut->Fit("poissonFix", FitOption, "", FitRangeCTDarkCut[0], FitRangeCTDarkCut[1]);
     gStyle->SetOptStat(1110);
     gStyle->SetOptFit(111);
-    changestatsBoxSize(hCrossTalkXY, 0.7, 0.99, 0.65, 0.935);
+    changestatsBoxSize(hCrossTalkXZ, 0.7, 0.99, 0.65, 0.935);
 
     figName = TString::Format("%sCrossTalkDarkCut_%04d_%04d.%s", ResultDir.c_str(), runnum, subrun, outputFileType.c_str());
+    canvas->SaveAs(figName);
+    canvas->Clear();
+
+
+    canvas = new TCanvas("canvas", "", histWidth * nHistHori, histHeight * nHistVert);
+    canvas->Divide(nHistHori, nHistVert);
+    canvas->cd(1);
+    hPECenterForCTXY->Draw();
+    TF1* poisson = new TF1("poisson", "[0]*TMath::Poisson(x, [1])", FitRangePECenter[0], FitRangePECenter[1]);
+    poisson->SetParameters(300, 40);
+    // hPECenterForCTXY->Fit("poisson", FitOption, "", FitRangePECenter[0], FitRangePECenter[1]);
+    gStyle->SetOptStat(1110);
+    gStyle->SetOptFit(111);
+    // changestatsBoxSize(hPECenterForCTXY, 0.7, 0.99, 0.65, 0.935);
+
+    canvas->cd(2);
+    hPECenterForCTXZ->Draw();
+    poisson->SetParameters(300, 40);
+    // hPECenterForCTXZ->Fit("poisson", FitOption, "", FitRangePECenter[0], FitRangePECenter[1]);
+    gStyle->SetOptStat(1110);
+    gStyle->SetOptFit(111);
+    // changestatsBoxSize(hPECenterForCTXZ, 0.7, 0.99, 0.65, 0.935);
+
+    figName = TString::Format("%sPECenter_%04d_%04d.%s", ResultDir.c_str(), runnum, subrun, outputFileType.c_str());
     canvas->SaveAs(figName);
     canvas->Clear();
 
