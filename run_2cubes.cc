@@ -101,7 +101,7 @@ bool isGap(int hodoX, int hodoY, int protoX, int shiftX=0, int shiftY=0)
 void changestatsBoxSize(TH1* hist, double x1, double x2, double y1, double y2)
 {
     gPad->Update();
-    TPaveStats *st = (TPaveStats*)hist->FindObject("stats");
+    TPaveStats* st = (TPaveStats *) hist->FindObject("stats");
     st->SetX1NDC(x1);
     st->SetX2NDC(x2);
     st->SetY1NDC(y1);
@@ -113,9 +113,12 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
     // constants
     gErrorIgnoreLevel = kError;
 
-    const array<double, 2> FitRangeCT = {0, 0.16};
-    const array<double, 2> FitRangeCTDarkCut = {0, 0.1};
-    const array<double, 2> FitRangePECenter = {20, 50};
+    const array<double, 2> FitRangeCT = { 0, 0.16 };
+    const array<double, 2> FitRangeCTDarkCut = { 0, 0.1 };
+    const array<double, 2> FitRangePECenterXY = { 30, 55 };
+    const array<double, 2> FitRangePECenterXZ = { 20, 40 };
+    const array<double, 2> FitRangePELeftXY = { -0.5, 5.5 };
+    const array<double, 2> FitRangePELeftXZ = { -0.5, 5.5 };
 
     const double MinPEScatterCTCenter = -10;
     const double MaxPEScatterCTCenter = 100;
@@ -126,6 +129,11 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
     const int hodoHighXForCT = 10;
     const int hodoLowYForCT = 7;
     const int hodoHighYForCT = 10;
+
+    // const int hodoLowXForCT = 8;
+    // const int hodoHighXForCT = 9;
+    // const int hodoLowYForCT = 8;
+    // const int hodoHighYForCT = 9;
 
     const double DarkCutPEForCT = 0.5;
 
@@ -177,6 +185,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
     const string ScintiPEDir = ResultDir + "scintiPEEachCh/";
     const string EvtDisplayDir = ResultDir + "evtdisplay/";
     const string HodoPEDir = ResultDir + "hodoscopePEEachCh/";
+    const string CellPEDir = ResultDir + "scintiPEEachCell";
 
     mkdir(ResultDir.c_str(), 0777);
     mkdir(ScintiPEDir.c_str(), 0777);
@@ -292,8 +301,14 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
         hPEProto[i] = new TH1D(histName.c_str(), histAxis.c_str(), NBinPEProto, MinPEProto, MaxPEProto);
     }
 
-    TH1D* hPECenterForCTXY = new TH1D("hPECenterForCTXY", "PE center (using Z readout);Light yield (p.e.);Number of events", NBinPEProto, MinPEProto, MaxPEProto);
-    TH1D* hPECenterForCTXZ = new TH1D("hPECenterForCTXZ", "PE center (using Y readout);Light yield (p.e.);Number of events", NBinPEProto, MinPEProto, MaxPEProto);
+    const double MinPECenter = -1.5;
+    const double MaxPECenter = 18.5;
+    const int NBinPECenter = MaxPECenter-MinPECenter;
+    TH1D* hPECenterForCTXY = new TH1D("hPECenterForCTXY", "PE center (using Z readout);Light yield (p.e.);Number of events", 100, -1.5, 98.5);
+    TH1D* hPECenterForCTXZ = new TH1D("hPECenterForCTXZ", "PE center (using Y readout);Light yield (p.e.);Number of events", 100, -1.5, 98.5);
+
+    TH1D* hPELeftForCTXY = new TH1D("hPELeftForCTXY", "PE left (using Z readout);Light yield (p.e.);Number of events", 20, -1.5, 18.5);
+    TH1D* hPELeftForCTXZ = new TH1D("hPELeftForCTXZ", "PE left (using Y readout);Light yield (p.e.);Number of events", 20, -1.5, 18.5);
 
 
     TH2D* hHodoHitMapWithProtoHitUp = new TH2D("hHodoHitMapWithProtoHitUp", "Upstream hodoscope hitmap with scinti. hit;cell # along X;cell # along Y;Number of events", NScifiEachHodo, MinHodoMap, MaxHodoMap, NScifiEachHodo, MinHodoMap, MaxHodoMap);
@@ -677,6 +692,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
             }
 
             goodEventForCT = goodEventForCTStraight;
+            // goodEventForCT = goodEventForCTUpDown;
 
 
 
@@ -756,6 +772,8 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
 
                 hPECenterForCTXY->Fill(centerPEXY);
                 hPECenterForCTXZ->Fill(centerPEXZ);
+                hPELeftForCTXY->Fill(leftPEXY);
+                hPELeftForCTXZ->Fill(leftPEXZ);
                 countCTPoint++;
             }
 
@@ -967,6 +985,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
 
 
     // Cross talk
+    // normal
     nHistHori = 2;
     nHistVert = 1;
     canvas = new TCanvas("canvas", "", histWidth * nHistHori, histHeight * nHistVert);
@@ -992,7 +1011,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
     canvas->SaveAs(figName);
     canvas->Clear();
 
-
+    // dark count cut
     canvas = new TCanvas("canvas", "", histWidth * nHistHori, histHeight * nHistVert);
     canvas->Divide(nHistHori, nHistVert);
 
@@ -1016,30 +1035,46 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
     canvas->SaveAs(figName);
     canvas->Clear();
 
-
+    // center only
+    TFile histsCenter(TString::Format("%sPECenter_%04d_%04d.root", ResultDir.c_str(), runnum, subrun), "RECREATE");
     canvas = new TCanvas("canvas", "", histWidth * nHistHori, histHeight * nHistVert);
     canvas->Divide(nHistHori, nHistVert);
     canvas->cd(1);
+    hPECenterForCTXY->Fit("landau", FitOption, "", FitRangePECenterXY[0], FitRangePECenterXY[1]);
     hPECenterForCTXY->Draw();
-    TF1* poisson = new TF1("poisson", "[0]*TMath::Poisson(x, [1])", FitRangePECenter[0], FitRangePECenter[1]);
-    poisson->SetParameters(300, 40);
-    // hPECenterForCTXY->Fit("poisson", FitOption, "", FitRangePECenter[0], FitRangePECenter[1]);
-    gStyle->SetOptStat(1110);
-    gStyle->SetOptFit(111);
-    // changestatsBoxSize(hPECenterForCTXY, 0.7, 0.99, 0.65, 0.935);
+    hPECenterForCTXY->Write();
 
     canvas->cd(2);
+    hPECenterForCTXZ->Fit("landau", FitOption, "", FitRangePECenterXZ[0], FitRangePECenterXZ[1]);
     hPECenterForCTXZ->Draw();
-    poisson->SetParameters(300, 40);
-    // hPECenterForCTXZ->Fit("poisson", FitOption, "", FitRangePECenter[0], FitRangePECenter[1]);
-    gStyle->SetOptStat(1110);
-    gStyle->SetOptFit(111);
-    // changestatsBoxSize(hPECenterForCTXZ, 0.7, 0.99, 0.65, 0.935);
+    hPECenterForCTXZ->Write();
+    histsCenter.Close();
 
     figName = TString::Format("%sPECenter_%04d_%04d.%s", ResultDir.c_str(), runnum, subrun, outputFileType.c_str());
     canvas->SaveAs(figName);
     canvas->Clear();
 
+    // left only
+    TF1* poissonI = new TF1("poissonI", "[0]*TMath::PoissonI(x+0.5, [1])", 0, 10);
+    TFile histsLeft(TString::Format("%sPELeft_%04d_%04d.root", ResultDir.c_str(), runnum, subrun), "RECREATE");
+    canvas = new TCanvas("canvas", "", histWidth * nHistHori, histHeight * nHistVert);
+    canvas->Divide(nHistHori, nHistVert);
+    canvas->cd(1);
+    poissonI->SetParameters(3000, 0.5);
+    hPELeftForCTXY->Fit("poissonI", FitOption, "", FitRangePELeftXY[0], FitRangePELeftXY[1]);
+    hPELeftForCTXY->Draw();
+    hPELeftForCTXY->Write();
+
+    canvas->cd(2);
+    poissonI->SetParameters(3000, 0.5);
+    hPELeftForCTXZ->Fit("poissonI", FitOption, "", FitRangePELeftXZ[0], FitRangePELeftXZ[1]);
+    hPELeftForCTXZ->Draw();
+    hPELeftForCTXZ->Write();
+    histsLeft.Close();
+
+    figName = TString::Format("%sPELeft_%04d_%04d.%s", ResultDir.c_str(), runnum, subrun, outputFileType.c_str());
+    canvas->SaveAs(figName);
+    canvas->Clear();
 
     // scatter plot of cross talk
     cout << "Straight: " << countCTStraight << endl;
