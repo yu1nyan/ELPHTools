@@ -94,7 +94,7 @@ bool ToScintiCh::isConnected(EEasiroc easirocType, int easirocCh)
     }
     else if (scintiType == EScintiType::NineCubes)
     {
-        if (easirocType == EEasiroc::Scinti2 && (easirocCh == 9 || easirocCh == 40 || easirocCh == 41))
+        if (easirocType == EEasiroc::Scinti2)
         {
             switch (easirocCh)
             {

@@ -1,5 +1,4 @@
 #!/bin/bash
-
 export run=$1
 export sub=5
 export nfile=$2
