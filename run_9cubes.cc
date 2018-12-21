@@ -113,6 +113,9 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
     // constants
     gErrorIgnoreLevel = kError;
 
+    const int NDataCT = 8;
+    const array<int, NDataCT> ChListCTXY = {11, 12, 28, 8, 26, 5, 6, 24};
+
     const array<double, 2> FitRangeCT = {0, 0.16};
     const array<double, 2> FitRangeCTDarkCut = {0, 0.1};
     const array<double, 2> FitRangePECenter = {20, 50};
