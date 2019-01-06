@@ -31,6 +31,8 @@ void run_proto(int &runnum, int &nsub, int &file_count, int &min_evt, int &max_e
     //  gStyle->SetOptFit(1111);
     gErrorIgnoreLevel = kError;
 
+    string imgtype = "png";
+
     TF1 *f1 = new TF1("landau_orig", "[0]*TMath::Landau(x,[1],[2])");
 
     int map[75] = { 31, 30, 15, 14, 13, // SLOT1 A1,B1,C1,D1,E1 (For readout X)
@@ -422,7 +424,7 @@ void run_proto(int &runnum, int &nsub, int &file_count, int &min_evt, int &max_e
             dist_Y = 0;
             dist   = 0;
 
-            figname1 = TString::Format("prototype/evtdisplay/hit_%d_%d.pdf", j, evt);
+            figname1 = TString::Format("prototype/evtdisplay/hit_%d_%d.%s", j, evt, imgtype.c_str());
 
             for (int i = 0; i < 64; i++) {
                 //  pe_h[i] = (double(adc_h[i]));
@@ -845,7 +847,7 @@ void run_proto(int &runnum, int &nsub, int &file_count, int &min_evt, int &max_e
             totalEvt++;
         }
 
-        TString  figname3 = TString::Format("prototype/distance_%d.pdf", runnum);
+        TString  figname3 = TString::Format("prototype/distance_%d.%s", runnum, imgtype.c_str());
         TCanvas *c1       = new TCanvas("c1", "", 800, 600);
         gStyle->SetOptStat(1111);
         hDist->GetYaxis()->SetTitleOffset(1.0);
@@ -903,8 +905,7 @@ void run_proto(int &runnum, int &nsub, int &file_count, int &min_evt, int &max_e
         f1->SetParameters(10, 60, 1.);
         hPE[x]->Fit("landau_orig", "Q", "", 30, 75);
         array_PE[x] = f1->GetParameter(1);
-        pdfname1    = TString::Format("prototype/75ch/run%d+%d_PE_position%d.pdf",
-                                      runnum, file_count - 1, x);
+        pdfname1    = TString::Format("prototype/75ch/run%d+%d_PE_position%d.%s", runnum, file_count - 1, x, imgtype.c_str());
 
         hPE[x]->GetYaxis()->SetTitle("Number of Events");
         hPE[x]->GetXaxis()->SetTitle("p.e.");
@@ -1005,7 +1006,7 @@ void run_proto(int &runnum, int &nsub, int &file_count, int &min_evt, int &max_e
     hHitRate_HSX2->SetMarkerSize(2.0);
     hHitRate_HSX2->Draw();
 
-    TString hratename = TString::Format("prototype/hitRate_%d+%d.pdf", runnum, file_count - 1);
+    TString hratename = TString::Format("prototype/hitRate_%d+%d.%s", runnum, file_count - 1, imgtype.c_str());
     c3->SaveAs(hratename);
 
 
@@ -1049,8 +1050,8 @@ void run_proto(int &runnum, int &nsub, int &file_count, int &min_evt, int &max_e
     hNHit_HSX2->GetXaxis()->SetLabelSize(0.04);
     hNHit_HSX2->Draw();
 
-    TString multiname = TString::Format("prototype/hodoscope_HitMultiplicity_%d+%d.pdf",
-                                        runnum, file_count - 1);
+    TString multiname = TString::Format("prototype/hodoscope_HitMultiplicity_%d+%d.%s",
+                                        runnum, file_count - 1, imgtype.c_str());
     c4->SaveAs(multiname);
 
     TCanvas *c5 = new TCanvas("c5", "", 800, 600);
@@ -1128,8 +1129,8 @@ void run_proto(int &runnum, int &nsub, int &file_count, int &min_evt, int &max_e
     hPE_HSX2->GetXaxis()->SetLabelSize(0.05);
     hPE_HSX2->Draw();
 
-    TString PEname = TString::Format("prototype/proto_PE_%d+%d.pdf",
-                                     runnum, file_count - 1);
+    TString PEname = TString::Format("prototype/proto_PE_%d+%d.%s",
+                                     runnum, file_count - 1, imgtype.c_str());
     c5->SaveAs(PEname);
 
     gStyle->SetOptStat(0);
@@ -1165,7 +1166,7 @@ void run_proto(int &runnum, int &nsub, int &file_count, int &min_evt, int &max_e
     gap_cons_count_h_x->GetXaxis()->SetTickLength(1);
     gap_cons_count_h_x->Draw("P");
 
-    TString c11_name = TString::Format("./prototype/gap_cons_count_%d+%d_%d.pdf", runnum, file_count - 1, nsub);
+    TString c11_name = TString::Format("./prototype/gap_cons_count_%d+%d_%d.%s", runnum, file_count - 1, nsub, imgtype.c_str());
     c11->SaveAs(c11_name.Data());
 }
 
