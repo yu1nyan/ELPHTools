@@ -135,7 +135,14 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
     // const int hodoLowYForCT = 8;
     // const int hodoHighYForCT = 9;
 
+    const int hodoLowXForCTCell = 1;
+    const int hodoHighXForCTCell = 16;
+    const int hodoLowYForCTCell = 1;
+    const int hodoHighYForCTCell = 16;
+
     const double DarkCutPEForCT = 0.5;
+
+    const double RatioCutForCT = 1.0;
 
     int omit_lowx1 = 0;
     int omit_highx1 = 0;
@@ -148,12 +155,6 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
     int omit_highy2 = 0;
 
     int subrun = 4;
-
-    // const array<int, NHodo> shiftHodo = { 0, 0, -1, 0 };
-    // const int shiftHSX1 = 0;
-    // const int shiftHSY1 = 0;
-    // const int shiftHSY2 = -1;
-    // const int shiftHSX2 = 0;
 
 
     const double HodoPEThreshold = 2.5;
@@ -175,11 +176,12 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
     const string rootfile_dir = "../tree_root/";
     const string calibfile_dir = "calibfile/";
     string resultDirTemp = "2cubes/";
+    mkdir(resultDirTemp.c_str(), 0777);
 
     time_t rawTime = time(nullptr);
     struct tm timeInfo = *localtime(&rawTime);
     string dateTimeStr = to_string(timeInfo.tm_sec + 100 * timeInfo.tm_min + 10000 * timeInfo.tm_hour + 1000000 * timeInfo.tm_mday + 100000000 * (timeInfo.tm_mon + 1) + 10000000000 * (1900 + timeInfo.tm_year));
-    // resultDirTemp += dateTimeStr + "/";
+    resultDirTemp += dateTimeStr + "/";
 
     const string ResultDir = resultDirTemp;
     const string ScintiPEDir = ResultDir + "scintiPEEachCh/";
@@ -191,6 +193,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
     mkdir(ScintiPEDir.c_str(), 0777);
     mkdir(EvtDisplayDir.c_str(), 0777);
     mkdir(HodoPEDir.c_str(), 0777);
+    mkdir(CellPEDir.c_str(), 0777);
 
 
     // Histograms
@@ -303,12 +306,12 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
 
     const double MinPECenter = -1.5;
     const double MaxPECenter = 18.5;
-    const int NBinPECenter = MaxPECenter-MinPECenter;
-    TH1D* hPECenterForCTXY = new TH1D("hPECenterForCTXY", "PE center (using Z readout);Light yield (p.e.);Number of events", 100, -1.5, 98.5);
-    TH1D* hPECenterForCTXZ = new TH1D("hPECenterForCTXZ", "PE center (using Y readout);Light yield (p.e.);Number of events", 100, -1.5, 98.5);
+    const int NBinPECenter = MaxPECenter - MinPECenter;
+    TH1D* hPECenterForCTXY = new TH1D("hPECenterForCTXY", "PE center (using Z readout);Light yield (ch9) (p.e.);Number of events", 110, -1.5, 108.5);
+    TH1D* hPECenterForCTXZ = new TH1D("hPECenterForCTXZ", "PE center (using Y readout);Light yield (ch41) (p.e.);Number of events", 110, -1.5, 108.5);
 
-    TH1D* hPELeftForCTXY = new TH1D("hPELeftForCTXY", "PE left (using Z readout);Light yield (p.e.);Number of events", 20, -1.5, 18.5);
-    TH1D* hPELeftForCTXZ = new TH1D("hPELeftForCTXZ", "PE left (using Y readout);Light yield (p.e.);Number of events", 20, -1.5, 18.5);
+    TH1D* hPELeftForCTXY = new TH1D("hPELeftForCTXY", "PE left (using Z readout);Light yield (ch8) (p.e.);Number of events", 20, -1.5, 18.5);
+    TH1D* hPELeftForCTXZ = new TH1D("hPELeftForCTXZ", "PE left (using Y readout);Light yield (ch40) (p.e.);Number of events", 20, -1.5, 18.5);
 
 
     TH2D* hHodoHitMapWithProtoHitUp = new TH2D("hHodoHitMapWithProtoHitUp", "Upstream hodoscope hitmap with scinti. hit;cell # along X;cell # along Y;Number of events", NScifiEachHodo, MinHodoMap, MaxHodoMap, NScifiEachHodo, MinHodoMap, MaxHodoMap);
@@ -371,24 +374,52 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
         }
     }
 
+
+    // Cross talk related
     const int NBinCT = 100;
-    const double MinCT = -0.1;
-    const double MaxCT = 0.4;
+    const double MinCT = 0;
+    const double MaxCT = 1.0;
     TH1D* hCrossTalkXZ = new TH1D("hCrossTalkXZ", "L.Y. ratio left/center (using Y readout);L.Y. left(ch40)/center(ch41);Number of events", NBinCT, MinCT, MaxCT);
     TH1D* hCrossTalkXY = new TH1D("hCrossTalkXY", "L.Y. ratio left/center (using Z readout);L.Y. left(ch8)/center(ch9);Number of events", NBinCT, MinCT, MaxCT);
 
     TH1D* hCrossTalkXYDarkCut = new TH1D("hCrossTalkXYDarkCut", "L.Y. ratio left/center (using Z readout, Dark count cut);L.Y. left(ch8)/center(ch9);Number of events", NBinCT, MinCT, MaxCT);
     TH1D* hCrossTalkXZDarkCut = new TH1D("hCrossTalkXZDarkCut", "L.Y. ratio left/center (using Y readout, Dark count cut);L.Y. left(ch40)/center(ch41);Number of events", NBinCT, MinCT, MaxCT);
 
+    TH1D* hCrossTalkXYDarkCutEachCell[NScifiEachHodo][NScifiEachHodo];
+    TH1D* hCrossTalkXZDarkCutEachCell[NScifiEachHodo][NScifiEachHodo];
+    for (int i = 0; i < NScifiEachHodo; i++)
+    {
+        for (int j = 0; j < NScifiEachHodo; j++)
+        {
+            histName = "hCrossTalkXYDarkCutX" + to_string(i + 1) + "Y" + to_string(j + 1);
+            histAxis = "L.Y. ratio left/center (using Z readout, Dark count cut, Cell X=" + to_string(i + 1) + " Y=" + to_string(j + 1) + ");L.Y. left(ch8)/center(ch9);Number of events";
+            hCrossTalkXYDarkCutEachCell[i][j] = new TH1D(histName.c_str(), histAxis.c_str(), NBinCT, MinCT, MaxCT);
 
+            histName = "hCrossTalkXZDarkCutX" + to_string(i + 1) + "Y" + to_string(j + 1);
+            histAxis = "L.Y. ratio left/center (using Y readout, Dark count cut, Cell X=" + to_string(i + 1) + " Y=" + to_string(j + 1) + ");L.Y. left(ch40)/center(ch41);Number of events";
+            hCrossTalkXZDarkCutEachCell[i][j] = new TH1D(histName.c_str(), histAxis.c_str(), NBinCT, MinCT, MaxCT);
+        }
+    }
 
+    TGraph* scatterCTXY = new TGraph();
+    TGraph* scatterCTXZ = new TGraph();
+
+    const double MinCTMap = 0;
+    const double MaxCTMap = 6;
+    TH2D* hCrossTalkXYDarkCutMap = new TH2D("hCrossTalkXYDCMap", "Cross talk rate (using Z readout, Dark count cut);cell # along X;cell # along Y;Cross talk rate (%)", NScifiEachHodo, MinHodoMap, MaxHodoMap, NScifiEachHodo, MinHodoMap, MaxHodoMap);
+    TH2D* hCrossTalkXZDarkCutMap = new TH2D("hCrossTalkXZDCMap", "Cross talk rate (using Y readout, Dark count cut);cell # along X;cell # along Y;Cross talk rate (%)", NScifiEachHodo, MinHodoMap, MaxHodoMap, NScifiEachHodo, MinHodoMap, MaxHodoMap);
+    hCrossTalkXYDarkCutMap->SetMinimum(MinCTMap);
+    hCrossTalkXYDarkCutMap->SetMaximum(MaxCTMap);
+    hCrossTalkXZDarkCutMap->SetMinimum(MinCTMap);
+    hCrossTalkXZDarkCutMap->SetMaximum(MaxCTMap);
+
+    // Gap check
     const int GapGraphMax = 50000 * 30;
     TH1D* hGapCount1s = new TH1D("hGapCount1s", "Gap count (hodo & proto1s);event # ;gap count", GapGraphMax, 0, GapGraphMax);
     TH1D* hGapCount2s = new TH1D("hGapCount2s", "Gap count (hodo & proto2s);event # ;gap count", GapGraphMax, 0, GapGraphMax);
 
 
-    TGraph* scatterCTXY = new TGraph();
-    TGraph* scatterCTXZ = new TGraph();
+
 
 
     // event loop variables & flags
@@ -410,12 +441,17 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
     bool isStraightBeam;
     bool goodEventForCT;
 
+    // Cross talkヒストグラムの各選別条件に対するフラグ
     bool goodEventForCTDownOnly;
     int countCTDownOnly = 0;
     bool goodEventForCTUpDown;
     int countCTUpDown = 0;
     bool goodEventForCTStraight;
     int countCTStraight = 0;
+
+    // Cellごとのcross talkヒストグラムに対するフラグ
+    bool goodEventForCTCell;
+    int countCTCell = 0;
 
     array<bool, NHodo> hodoHit;
 
@@ -597,6 +633,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
             goodEventForCTUpDown = false;
             goodEventForCTDownOnly = false;
             goodEventForCTStraight = false;
+            goodEventForCTCell = false;
 
             for (int ch = 0; ch < NScifi; ch++)
             {
@@ -672,7 +709,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
                 hHodoHitMapWithStraightBeam->Fill(maxChHodo[static_cast<int> (EHodoscope::HSX2)], maxChHodo[static_cast<int> (EHodoscope::HSY2)]);
             }
 
-            // Cross talkを出す用のGood eventフラグ
+            // Cross talkを出す用のGood eventフラグ（3つの条件があるが、そのうち1つを下で選択している）
             if (isStraightBeam && maxChHodo[static_cast<int> (EHodoscope::HSX2)] >= hodoLowXForCT && maxChHodo[static_cast<int> (EHodoscope::HSX2)] <= hodoHighXForCT && maxChHodo[static_cast<int> (EHodoscope::HSY2)] >= hodoLowYForCT && maxChHodo[static_cast<int> (EHodoscope::HSY2)] <= hodoHighYForCT)
             {
                 goodEventForCTStraight = true;
@@ -691,8 +728,15 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
                 countCTDownOnly++;
             }
 
-            goodEventForCT = goodEventForCTStraight;
-            // goodEventForCT = goodEventForCTUpDown;
+            // goodEventForCT = goodEventForCTStraight;
+            goodEventForCT = goodEventForCTUpDown;
+
+            // CellごとのCross talk分布出す用
+            if (isStraightBeam && maxChHodo[static_cast<int> (EHodoscope::HSX2)] >= hodoLowXForCTCell && maxChHodo[static_cast<int> (EHodoscope::HSX2)] <= hodoHighXForCTCell && maxChHodo[static_cast<int> (EHodoscope::HSY2)] >= hodoLowYForCTCell && maxChHodo[static_cast<int> (EHodoscope::HSY2)] <= hodoHighYForCTCell)
+            {
+                goodEventForCTCell = true;
+                countCTCell++;
+            }
 
 
 
@@ -744,7 +788,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
             centerPEXZ = pe[static_cast<int> (EEasiroc::Scinti2)][41];
             leftPEXZ = pe[static_cast<int> (EEasiroc::Scinti2)][40];
 
-            // ホドスコープ内側4ch×4chヒットをクロストークのヒストグラムに使う
+            // ホドスコープ内側4ch×4ch（または2×2）ヒットをクロストークのヒストグラムに使う
             if (goodEventForCT)
             {
                 hCrossTalkXY->Fill(leftPEXY / centerPEXY);
@@ -775,6 +819,31 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
                 hPELeftForCTXY->Fill(leftPEXY);
                 hPELeftForCTXZ->Fill(leftPEXZ);
                 countCTPoint++;
+            }
+
+
+            // セルごとのクロストーク
+            if (goodEventForCTCell)
+            {
+                #ifdef DEBUG
+                    cout << "selected Hodo Ch: HSX2=" << maxChHodo[static_cast<int> (EHodoscope::HSX2)] << ", HSY2=" << maxChHodo[static_cast<int> (EHodoscope::HSY2)] << endl;
+                #endif
+                if (leftPEXY < DarkCutPEForCT)
+                {
+                    hCrossTalkXYDarkCutEachCell[maxChHodo[static_cast<int> (EHodoscope::HSX2)] - 1][maxChHodo[static_cast<int> (EHodoscope::HSY2)] - 1]->Fill(0);
+                }
+                else// if(leftPEXY*RatioCutForCT < centerPEXY)
+                {
+                    hCrossTalkXYDarkCutEachCell[maxChHodo[static_cast<int> (EHodoscope::HSX2)] - 1][maxChHodo[static_cast<int> (EHodoscope::HSY2)] - 1]->Fill(leftPEXY / centerPEXY);
+                }
+                if (leftPEXZ < DarkCutPEForCT)
+                {
+                    hCrossTalkXZDarkCutEachCell[maxChHodo[static_cast<int> (EHodoscope::HSX2)] - 1][maxChHodo[static_cast<int> (EHodoscope::HSY2)] - 1]->Fill(0);
+                }
+                else// if(leftPEXZ*RatioCutForCT < centerPEXZ)
+                {
+                    hCrossTalkXZDarkCutEachCell[maxChHodo[static_cast<int> (EHodoscope::HSX2)] - 1][maxChHodo[static_cast<int> (EHodoscope::HSY2)] - 1]->Fill(leftPEXZ / centerPEXZ);
+                }
             }
 
 
@@ -1076,6 +1145,37 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
     canvas->SaveAs(figName);
     canvas->Clear();
 
+    // Each Cell
+    TFile histsCTXYDarkCutEachCell(TString::Format("%sCrossTalkXYDarkCutEachCell_%04d_%04d.root", ResultDir.c_str(), runnum, subrun), "RECREATE");
+    canvas = new TCanvas();
+    for (int i = 0; i < NScifiEachHodo; i++)
+    {
+        for (int j = 0; j < NScifiEachHodo; j++)
+        {
+            hCrossTalkXYDarkCutEachCell[j][i]->Draw();
+            hCrossTalkXYDarkCutEachCell[j][i]->Write();
+            hCrossTalkXYDarkCutMap->SetBinContent(j + 1, i + 1, hCrossTalkXYDarkCutEachCell[j][i]->GetMean() * 100); // *100 means percentile
+        }
+    }
+    histsCTXYDarkCutEachCell.Close();
+    canvas->Clear();
+
+    TFile histsCTXZDarkCutEachCell(TString::Format("%sCrossTalkXZDarkCutEachCell_%04d_%04d.root", ResultDir.c_str(), runnum, subrun), "RECREATE");
+    canvas = new TCanvas();
+    for (int i = 0; i < NScifiEachHodo; i++)
+    {
+        for (int j = 0; j < NScifiEachHodo; j++)
+        {
+            hCrossTalkXZDarkCutEachCell[j][i]->Draw();
+            hCrossTalkXZDarkCutEachCell[j][i]->Write();
+            hCrossTalkXZDarkCutMap->SetBinContent(j + 1, i + 1, hCrossTalkXZDarkCutEachCell[j][i]->GetMean() * 100);  // *100 means percentile
+        }
+    }
+    histsCTXZDarkCutEachCell.Close();
+    canvas->Clear();
+
+
+
     // scatter plot of cross talk
     cout << "Straight: " << countCTStraight << endl;
     cout << "UpDown: " << countCTUpDown << endl;
@@ -1173,6 +1273,26 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
     canvas->SaveAs(figName);
     canvas->Clear();
 
+    // Beam hit position dependency of cross talk (Hodomap)
+    nHistHori = 2;
+    nHistVert = 1;
+    gStyle->SetPaintTextFormat("3.2f");
+    canvas = new TCanvas("canvas", "", histWidth * nHistHori, histHeight * nHistVert);
+    canvas->Divide(nHistHori, nHistVert);
+    canvas->cd(1);
+    hCrossTalkXYDarkCutMap->Draw("text colz");
+    hCrossTalkXYDarkCutMap->GetXaxis()->SetNdivisions(NScifiEachHodo);
+    hCrossTalkXYDarkCutMap->GetYaxis()->SetNdivisions(NScifiEachHodo);
+    changestatsBoxSize(hCrossTalkXYDarkCutMap, 0.7, 0.9, 0.7, 0.935);
+    canvas->cd(2);
+    hCrossTalkXZDarkCutMap->Draw("text colz");
+    hCrossTalkXZDarkCutMap->GetXaxis()->SetNdivisions(NScifiEachHodo);
+    hCrossTalkXZDarkCutMap->GetYaxis()->SetNdivisions(NScifiEachHodo);
+    changestatsBoxSize(hCrossTalkXZDarkCutMap, 0.7, 0.9, 0.7, 0.935);
+
+    figName = TString::Format("%sCrossTalkDarkCutMap_%04d_%04d.%s", ResultDir.c_str(), runnum, subrun, outputFileType.c_str());
+    canvas->SaveAs(figName);
+    canvas->Clear();
 
     //
 }
