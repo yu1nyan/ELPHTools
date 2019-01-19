@@ -1183,7 +1183,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
     canvas = new TCanvas("canvas", "", histWidth * nHistHori, histHeight * nHistVert);
     canvas->Divide(nHistHori, nHistVert);
     canvas->cd(1);
-    gStyle->SetOptFit(0111);
+    gStyle->SetOptFit(111);
     scatterCTXY->Fit("pol1", FitOption, "", MinPEScatterCTCenter, MaxPEScatterCTCenter);
     scatterCTXY->SetTitle("L.Y. left vs center (using Z readout)");
     scatterCTXY->GetYaxis()->SetTitle("L.Y. left (ch9) (p.e.)");
