@@ -1183,7 +1183,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
     canvas = new TCanvas("canvas", "", histWidth * nHistHori, histHeight * nHistVert);
     canvas->Divide(nHistHori, nHistVert);
     canvas->cd(1);
-    gStyle->SetOptFit(0111);
+    gStyle->SetOptFit(111);
     scatterCTXY->Fit("pol1", FitOption, "", MinPEScatterCTCenter, MaxPEScatterCTCenter);
     scatterCTXY->SetTitle("L.Y. left vs center (using Z readout)");
     scatterCTXY->GetYaxis()->SetTitle("L.Y. left (ch9) (p.e.)");
@@ -1272,6 +1272,16 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
     figName = TString::Format("%sHodoHitMap_%04d_%04d.%s", ResultDir.c_str(), runnum, subrun, outputFileType.c_str());
     canvas->SaveAs(figName);
     canvas->Clear();
+
+    const Int_t NRGBs = 3;
+    const Int_t NCont = 255;
+
+    Double_t stops[NRGBs] = { 0.00, .50, 1.00 };
+    Double_t red[NRGBs]   = { 1.00, 1.0, 1.00 };
+    Double_t green[NRGBs] = { 1.00, 0.0, 0.00 };
+    Double_t blue[NRGBs]  = { 1.00, 0.0, 0.00 };
+    TColor::CreateGradientColorTable(2, stops, red, green, blue, NCont);
+    gStyle->SetNumberContours(NCont);
 
     // Beam hit position dependency of cross talk (Hodomap)
     nHistHori = 2;
