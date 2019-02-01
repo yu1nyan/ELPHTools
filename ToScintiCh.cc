@@ -129,7 +129,7 @@ bool ToScintiCh::isConnected(EEasiroc easirocType, int easirocCh)
         }
         return false;
     }
-    else if (scintiType == EScintiType::WRef3D || scintiType == EScintiType::WORef3D)
+    else if (scintiType == EScintiType::Printed)
     {
         if (easirocCh == 9 && easirocType == EEasiroc::Scinti2)
         {
@@ -212,7 +212,7 @@ tuple<EScintiSurface, int, int> ToScintiCh::getCh(EEasiroc easirocType, int easi
             }
         }
     }
-    else if (scintiType == EScintiType::WRef3D || scintiType == EScintiType::WORef3D)
+    else if (scintiType == EScintiType::Printed)
     {
         if (easirocCh == 9 && easirocType == EEasiroc::Scinti2)
         {

@@ -20,8 +20,14 @@ enum class EEasiroc
 
 enum class EScintiType
 {
-    WRef3D, WORef3D, OneCube, ThreeCubes, Proto555, Proto446, TwoCubes, NineCubes, Other, None
+    Printed, OneCube, ThreeCubes, Proto555, Proto446, TwoCubes, NineCubes, Other, None
 };
+
+enum class E3DOption
+{
+    WRef1cmP, WRef1cmV, WRef2cmP, WRef2cmV, WORef1cmV, WORef1cmP, None
+};
+
 const int NScifi = 64;              //シンチファイバーの本数
 const int NHodo = 4;                //ホドスコープの本数
 const int NScifiEachHodo = 16;      //ホドスコープ1本あたりのシンチファイバーの本数
