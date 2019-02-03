@@ -1,4 +1,4 @@
-// include C++ headers
+﻿// include C++ headers
 #include <iostream>
 #include <ios>
 #include <iomanip>
@@ -30,6 +30,7 @@
 #include <TGraph.h>
 #include <TLine.h>
 #include <TEllipse.h>
+#include <TGraphErrors.h>
 
 using namespace std;
 
@@ -67,42 +68,28 @@ tuple<EHodoscope, int> ToHodoscopeCh(int easirocCh, int shiftXup=0, int shiftYup
 
 bool isGap(int hodoX, int hodoY, bool isHitToCube, E3DOption option, int shiftX=0, int shiftY=0)
 {
-	// 1cm cube & 2cm cube with parallel placing
-    if (isHitToCube && (option == WRef1cmP || option == WRef1cmV || option == WORef1cmP || option == WORef1cmV || option == WRef2cmP) && !(hodoX + shiftX >= 6 && hodoX + shiftX <= 11 && hodoY + shiftY >= 6 && hodoY + shiftY <= 11))
+    // 1cm cube & 2cm cube with parallel placing
+    if (isHitToCube && (option == E3DOption::WRef1cmP || option == E3DOption::WRef1cmV || option == E3DOption::WORef1cmP || option == E3DOption::WORef1cmV || option == E3DOption::WRef2cmP) && !(hodoX + shiftX >= 6 && hodoX + shiftX <= 11 && hodoY + shiftY >= 6 && hodoY + shiftY <= 11))
     {
         return true;
     }
-	// 2cm cube with vertical placing
-    if (isHitToCube && option == WRef2cmV && !(hodoX + shiftX >= 3 && hodoX + shiftX <= 14 && hodoY + shiftY >= 6 && hodoY + shiftY <= 11))
+    // 2cm cube with vertical placing
+    if (isHitToCube && option == E3DOption::WRef2cmV && !(hodoX + shiftX >= 3 && hodoX + shiftX <= 14 && hodoY + shiftY >= 6 && hodoY + shiftY <= 11))
     {
         return true;
     }
-
+    if (!isHitToCube && (option == E3DOption::WRef1cmP || option == E3DOption::WRef1cmV || option == E3DOption::WORef1cmP || option == E3DOption::WORef1cmV || option == E3DOption::WRef2cmP) && (hodoX + shiftX >= 6 && hodoX + shiftX <= 11 && hodoY + shiftY >= 6 && hodoY + shiftY <= 11))
+    {
+        return true;
+    }
+    if (!isHitToCube && option == E3DOption::WRef2cmV && (hodoX + shiftX >= 3 && hodoX + shiftX <= 14 && hodoY + shiftY >= 6 && hodoY + shiftY <= 11))
+    {
+        return true;
+    }
     return false;
 }
 
-// ヒストグラム出力関数
-// クラスとして作ったほうが良い：Divideする場合の処理が複雑・引数が複数パターン取れそう（1個のヒストをDrawするときはTH1*、1個以上のときはTH1**を渡さなければならないなど）
-// void OutputTH1(TH1* hist, TString figName, int nHistHorizontal, int nHistVertical, int int histWidth = 800, int histHeight = 600)
-// {
-//     // error
-//     if(nHistVertical <= 0 || nHistHorizontal <= 0) return;
-//
-//     TCanvas canvas = new TCanvas("canvas", "", histWidth * nHistHorizontal, histHeight * nHistVertical);
-//     if(nHistHorizontal != 1 && nHistVertical != 1)
-//     {
-//         canvas->Divide(nHistHorizontal, nHistVertical);
-//     }
-//     canvas->cd(1);
-//     hCrossTalkXY->Draw();
-//     canvas->cd(2);
-//     hCrossTalkXZ->Draw();
-//     figName = TString::Format("%sCrossTalk_%04d_%04d.%s", ResultDir.c_str(), runnum, subrun, outputFileType.c_str());
-//     canvas->SaveAs(figName);
-//     canvas->Clear();
-// }
-
-void changestatsBoxSize(TH1* hist, double x1, double x2, double y1, double y2)
+void changeStatsBoxSize(TH1* hist, double x1, double x2, double y1, double y2)
 {
     gPad->Update();
     TPaveStats* st = (TPaveStats *) hist->FindObject("stats");
@@ -112,10 +99,30 @@ void changestatsBoxSize(TH1* hist, double x1, double x2, double y1, double y2)
     st->SetY2NDC(y2);
 }
 
+void changeStatsBoxSize(TH1* hist, array<double, 4> size)
+{
+    gPad->Update();
+    TPaveStats* st = (TPaveStats *) hist->FindObject("stats");
+    st->SetX1NDC(size[0]);
+    st->SetX2NDC(size[1]);
+    st->SetY1NDC(size[2]);
+    st->SetY2NDC(size[3]);
+}
+
+// void changeStatsBoxSize(TH2* hist, double x1, double x2, double y1, double y2)
+// {
+//     gPad->Update();
+//     TPaveStats* st = (TPaveStats *) hist->FindObject("stats");
+//     st->SetX1NDC(x1);
+//     st->SetX2NDC(x2);
+//     st->SetY1NDC(y1);
+//     st->SetY2NDC(y2);
+// }
+
 void drawCubeLine(string config)
 {
-    //     const double binmin = -0.1;
-    // const double binmax = 30.;
+    // TODO: E3DOptionへの対応
+    // 穴は一つしかないから
 
     // Physical length (mm)
     const double HoleRadius = 0.75;
@@ -123,14 +130,14 @@ void drawCubeLine(string config)
     const double CubeSize = 10.;
     const double SciFiWidth = 1.7;
 
-    const double low_x = 0.1/SciFiWidth + 5.5;
-    const double upp_x = low_x + CubeSize/SciFiWidth;
+    const double low_x = 0.1 / SciFiWidth + 5.5;
+    const double upp_x = low_x + CubeSize / SciFiWidth;
     const double low_y = low_x;
-    const double upp_y = low_y + CubeSize/SciFiWidth;
-    const double low_fiber_pos = upp_x - (HoleCenterPosFromCubeEdge-HoleRadius)/SciFiWidth;
-    const double upp_fiber_pos = upp_x - (HoleCenterPosFromCubeEdge+HoleRadius)/SciFiWidth;
-    const double Zradius = HoleRadius/SciFiWidth;
-    const double center_pos = HoleCenterPosFromCubeEdge/SciFiWidth;
+    const double upp_y = low_y + CubeSize / SciFiWidth;
+    const double low_fiber_pos = upp_x - (HoleCenterPosFromCubeEdge - HoleRadius) / SciFiWidth;
+    const double upp_fiber_pos = upp_x - (HoleCenterPosFromCubeEdge + HoleRadius) / SciFiWidth;
+    const double Zradius = HoleRadius / SciFiWidth;
+    const double center_pos = HoleCenterPosFromCubeEdge / SciFiWidth;
 
     const int LineColor = 7;
     // 0:white, 1:black, 2:red, 3:green, 4:blue, 5:yellow, 6:magenta, 7:cyan, 8:dark green, 9:purple
@@ -231,12 +238,46 @@ void drawCubeLine(string config)
     circle->Draw();
 }
 
-// キューブをホドスコープに射影したときに
-// 1cmサイズ: WRef3D1 or WORef3D1（すなわちキューブが1cmサイズであるか、2cmサイズでもparallelならばこっち）
-// 2cmサイズ: WRef3D2 or WORef3D2（2cmサイズかつverticalならこっち）
+// キューブ種類・配置のオプションとrunnumの対応
 E3DOption decideOption(int runnum)
 {
-	int one[] = {0,4,5,6,7,9,10,11,12,13,}
+    // int one[] = {0,4,5,6,7,9,10,11,12,13,}
+    if (runnum == 0 || (runnum >= 4 && runnum <= 7) || (runnum >= 9 && runnum <= 13))
+        return E3DOption::WRef1cmV; // white refector
+    if (runnum >= 14 && runnum <= 23)
+        return E3DOption::WRef2cmV;
+    if (runnum == 24 || runnum >= 28 && runnum <= 36)
+        return E3DOption::WRef1cmP;
+    if (runnum >= 37 && runnum <= 43 || runnum >= 49 || runnum <= 51)
+        return E3DOption::WRef2cmP;
+    if (runnum >= 56 && runnum <= 58 || runnum >= 66 && runnum <= 68)
+        return E3DOption::WRef1cmV; // silver ref.
+    if (runnum >= 69 && runnum <= 74)
+        return E3DOption::WRef1cmP;
+    if (runnum >= 76 && runnum <= 77 || runnum >= 81 && runnum <= 84)
+        return E3DOption::WORef1cmV;
+    if (runnum >= 85 && runnum <= 91)
+        return E3DOption::WORef1cmP;
+    cerr << "Invalid run number!!!" << endl;
+    return E3DOption::None;
+}
+
+// E3DOptionに応じて、ホドスコープに射影したときに
+// 1cmサイズ: true
+// 2cmサイズ: false
+// 存在しないrunnumはあらかじめ弾かれていることが前提（弾かれていないと存在しないrunnumに対してtrueを返す）
+bool is1cmArea(E3DOption option)
+{
+    if (option == E3DOption::WRef2cmV)
+        return false;
+    return true;
+}
+
+bool isVertical(E3DOption option)
+{
+    if (option == E3DOption::WRef1cmV || option == E3DOption::WRef2cmV || option == E3DOption::WORef1cmV)
+        return true;
+    return false;
 }
 
 void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int shiftHSY2=0, int shiftHSX2=0, int min_evt=-1, int max_evt=-1, string outputFileType="png", int gap_point_0=0, int gap_pt2s_0=0, int gap_pt1s_0=0, int gap_hs_0=0, int gap_point_1=0, int gap_pt2s_1=0, int gap_pt1s_1=0, int gap_hs_1=0)
@@ -244,36 +285,22 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
     // constants
     gErrorIgnoreLevel = kError;
 
-    const array<double, 2> FitRangeCT = { 0, 0.16 };
-    const array<double, 2> FitRangeCTDarkCut = { 0, 0.1 };
-    const array<double, 2> FitRangePECenterXY = { 30, 55 };
-    const array<double, 2> FitRangePECenterXZ = { 20, 40 };
-    const array<double, 2> FitRangePELeftXY = { -0.5, 5.5 };
-    const array<double, 2> FitRangePELeftXZ = { -0.5, 5.5 };
+    double minPEEachCellFit = 2.5;
+    double maxPEEachCellFit = 18.5;
 
-    const double MinPEScatterCTCenter = -10;
-    const double MaxPEScatterCTCenter = 100;
-    const double MinPEScatterCTLeft = -10;
-    const double MaxPEScatterCTLeft = 100;
 
-    const int hodoLowXForCT = 7;
-    const int hodoHighXForCT = 10;
-    const int hodoLowYForCT = 7;
-    const int hodoHighYForCT = 10;
+    const double CutPEForEachCell = 2.0;
 
-    // const int hodoLowXForCT = 8;
-    // const int hodoHighXForCT = 9;
-    // const int hodoLowYForCT = 8;
-    // const int hodoHighYForCT = 9;
+    const int hodoLowXFor1cm = 7;
+    const int hodoHighXFor1cm = 10;
+    const int hodoLowYFor1cm = 7;
+    const int hodoHighYFor1cm = 10;
 
-    const int hodoLowXForCTCell = 1;
-    const int hodoHighXForCTCell = 16;
-    const int hodoLowYForCTCell = 1;
-    const int hodoHighYForCTCell = 16;
+    const int hodoLowXFor2cm = 4;
+    const int hodoHighXFor2cm = 13;
+    const int hodoLowYFor2cm = 7;
+    const int hodoHighYFor2cm = 10;
 
-    const double DarkCutPEForCT = 0.5;
-
-    const double RatioCutForCT = 1.0;
 
     int omit_lowx1 = 0;
     int omit_highx1 = 0;
@@ -288,7 +315,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
     int subrun = 6;
 
     const double HodoPEThreshold = 2.5;
-    const double ProtoPEThreshold = 9.5;
+    const double ProtoPEThreshold = 2.5;
     const double ProtoPEThresholdBeamAxis = 39.5;
 
     const TString FitOption = "Q";
@@ -317,7 +344,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
     const string ScintiPEDir = ResultDir + "scintiPEEachCh/";
     const string EvtDisplayDir = ResultDir + "evtdisplay/";
     const string HodoPEDir = ResultDir + "hodoscopePEEachCh/";
-    const string CellPEDir = ResultDir + "scintiPEEachCell";
+    const string CellPEDir = ResultDir + "scintiPEEachCell/";
 
     mkdir(ResultDir.c_str(), 0777);
     mkdir(ScintiPEDir.c_str(), 0777);
@@ -358,8 +385,8 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
 
     TH1D* hPEHodo[NHodo];
     const Int_t NBinPEHodo = 70;
-    const double MinPEHodo = 0.0;
-    const double MaxPEHodo = 70.0;
+    const double MinPEHodo = -0.5;
+    const double MaxPEHodo = 69.5;
     for (int i = 0; i < NHodo; i++)
     {
         histName = "hPE_" + HodoName[i];
@@ -423,26 +450,40 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
         hHitRateProto[i] = new TH2D(histName.c_str(), histAxis.c_str(), NScintiOneSide, MinProtoMap, MaxProtoMap, NScintiOneSide, MinProtoMap, MaxProtoMap);
     }
 
-    TH1D* hPEProto[NSurfaceScinti];
-    const double MinPEProto = 0.;
-    const double MaxPEProto = 80.;
-    const int NBinPEProto = 80;
-    for (int i = 0; i < NSurfaceScinti; i++)
+    TH1D* hPEProto;
+    TH1D* hPEProtoGood;
+    const double MinPEProto = -0.5;
+    const double MaxPEProto = 99.5;
+    const int NBinPEProto = 100;
+    histName = "hPEZY";
+    histAxis = "PE ZY;Light yield (p.e.);Number of events";
+    hPEProto = new TH1D(histName.c_str(), histAxis.c_str(), NBinPEProto, MinPEProto, MaxPEProto);
+    // hPEProto = new TH1D(histName.c_str(), histAxis.c_str(), 100, -0.5, 9.5);
+    histName += "Good";
+    histAxis = "PE ZY good;Light yield (p.e.);Number of events";
+    hPEProtoGood = new TH1D(histName.c_str(), histAxis.c_str(), NBinPEProto, MinPEProto, MaxPEProto);
+
+    TH1D* hPEProtoGoodCell[NScifiEachHodo][NScifiEachHodo];
+    for (int y = 0; y < NScifiEachHodo; y++)
     {
-        histName = "hPE" + SurfaceName[i];
-        histAxis = "PE " + SurfaceName[i] + ";Light yield (p.e.);Number of events";
-        hPEProto[i] = new TH1D(histName.c_str(), histAxis.c_str(), NBinPEProto, MinPEProto, MaxPEProto);
+        for (int x = 0; x < NScifiEachHodo; x++)
+        {
+            histName = "hPECellZY_X" + to_string(x + 1) + "Y" + to_string(y + 1) + "";
+            histAxis = "PE ZY Cell (X,Y) = (" + to_string(x + 1) + "," + to_string(y + 1) + ");Light yield (p.e.);Number of events";
+            hPEProtoGoodCell[x][y] = new TH1D(histName.c_str(), histAxis.c_str(), NBinPEProto, MinPEProto, MaxPEProto);
+        }
     }
 
-    const double MinPECenter = -1.5;
-    const double MaxPECenter = 18.5;
-    const int NBinPECenter = MaxPECenter - MinPECenter;
-    TH1D* hPECenterForCTXY = new TH1D("hPECenterForCTXY", "PE center (using Z readout);Light yield (ch9) (p.e.);Number of events", 110, -1.5, 108.5);
-    TH1D* hPECenterForCTXZ = new TH1D("hPECenterForCTXZ", "PE center (using Y readout);Light yield (ch41) (p.e.);Number of events", 110, -1.5, 108.5);
+    TH2D* hPEProtoHodoMap = new TH2D("hPEProtoHodoMap", "Scintillator PE map;cell # along X;cell # along Y; Light yield (p.e.)", NScifiEachHodo, MinHodoMap, MaxHodoMap, NScifiEachHodo, MinHodoMap, MaxHodoMap);
+    hPEProtoHodoMap->SetMinimum(0);
+    // hPEProtoHodoMap->SetMaximum(MaxPEProto+0.5);
+    TH2D* hPEProtoHodoMapMean = new TH2D("hPEProtoHodoMapMean", "Scintillator PE map (using mean);cell # along X;cell # along Y; Light yield (p.e.)", NScifiEachHodo, MinHodoMap, MaxHodoMap, NScifiEachHodo, MinHodoMap, MaxHodoMap);
 
-    TH1D* hPELeftForCTXY = new TH1D("hPELeftForCTXY", "PE left (using Z readout);Light yield (ch8) (p.e.);Number of events", 20, -1.5, 18.5);
-    TH1D* hPELeftForCTXZ = new TH1D("hPELeftForCTXZ", "PE left (using Y readout);Light yield (ch40) (p.e.);Number of events", 20, -1.5, 18.5);
-
+    TH2D* hDetectionEff = new TH2D("hDetectionEff", "Detection efficiency;cell # along X;cell # along Y; Detection efficiency", NScifiEachHodo, MinHodoMap, MaxHodoMap, NScifiEachHodo, MinHodoMap, MaxHodoMap);
+    // hDetectionEff->SetMinimum(0.);
+    // hDetectionEff->SetMaximum(1.);
+    int countHodoHitEachCell[NScifiEachHodo][NScifiEachHodo] = { };
+    int countScintiHodoHitEachCell[NScifiEachHodo][NScifiEachHodo] = { };
 
     TH2D* hHodoHitMapWithProtoHitUp = new TH2D("hHodoHitMapWithProtoHitUp", "Upstream hodoscope hitmap with scinti. hit;cell # along X;cell # along Y;Number of events", NScifiEachHodo, MinHodoMap, MaxHodoMap, NScifiEachHodo, MinHodoMap, MaxHodoMap);
     TH2D* hHodoHitMapWithProtoHitDown = new TH2D("hHodoHitMapWithProtoHitDown", "Downstream hodoscope hitmap with scinti. hit;cell # along X;cell # along Y;Number of events", NScifiEachHodo, MinHodoMap, MaxHodoMap, NScifiEachHodo, MinHodoMap, MaxHodoMap);
@@ -452,103 +493,63 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
 
     TH2D* hHodoHitMapWithStraightBeam = new TH2D("hHodoHitMapWithStraightBeam", "Hodoscope hitmap with straight beam event;cell # along X;cell # along Y;Number of events", NScifiEachHodo, MinHodoMap, MaxHodoMap, NScifiEachHodo, MinHodoMap, MaxHodoMap);
 
-    TH1D* hPEProtoEach[NSurfaceScinti][NChOneSide][NChOneSide];
-    vector<tuple<EEasiroc, int, EScintiSurface, int, int>> usingProtoCh;     // 使用チャンネルを格納 <EASIROC ch, プロトタイプ面, cube # horizontal, cube # vertical>
-    for (int i = 0; i < NEasiroc - 1; i++)
-    {
-        EEasiroc easiroc;
-        if (i == 0)
-            easiroc = EEasiroc::Scinti2;
-        else
-            easiroc = EEasiroc::Scinti1;
+    // TH1D* hPEProtoEach[NSurfaceScinti][NChOneSide][NChOneSide];
+    // vector<tuple<EEasiroc, int, EScintiSurface, int, int>> usingProtoCh;     // 使用チャンネルを格納 <EASIROC ch, プロトタイプ面, cube # horizontal, cube # vertical>
+    // for (int i = 0; i < NEasiroc - 1; i++)
+    // {
+    //     EEasiroc easiroc;
+    //     if (i == 0)
+    //         easiroc = EEasiroc::Scinti2;
+    //     else
+    //         easiroc = EEasiroc::Scinti1;
+    //
+    //     ToScintiCh* toScintiCh = new ToScintiCh(EScintiType::Printed);
+    //
+    //
+    //     for (int ch = 0; ch < NChEasiroc; ch++)
+    //     {
+    //         if (toScintiCh->isConnected(easiroc, ch))
+    //         {
+    //             tuple<EScintiSurface, int, int> scintiCh = toScintiCh->getCh(easiroc, ch);
+    //
+    //             EScintiSurface surface = get<0> (scintiCh);
+    //             int horizontal = get<1> (scintiCh);
+    //             int vertical = get<2> (scintiCh);
+    //
+    //             usingProtoCh.push_back(forward_as_tuple(easiroc, ch, surface, horizontal, vertical));
+    //
+    //             histName = "hPE";
+    //             histAxis = "PE ";
+    //             if (surface == EScintiSurface::XY)
+    //             {
+    //                 histName += "X" + to_string(horizontal) + "Y" + to_string(vertical);
+    //                 histAxis += "X=" + to_string(horizontal) + " Y=" + to_string(vertical) + ";Light yield (p.e.);Number of events";
+    //             }
+    //             else if (surface == EScintiSurface::ZY)
+    //             {
+    //                 histName += "Z" + to_string(horizontal) + "Y" + to_string(vertical);
+    //                 histAxis += "Z=" + to_string(horizontal) + " Y=" + to_string(vertical) + ";Light yield (p.e.);Number of events";
+    //             }
+    //             else
+    //             {
+    //                 histName += "X" + to_string(horizontal) + "Z" + to_string(vertical);
+    //                 histAxis += "X=" + to_string(horizontal) + " Z=" + to_string(vertical) + ";Light yield (p.e.);Number of events";
+    //             }
+    //
+    //             hPEProtoEach[static_cast<int> (surface)][horizontal][vertical] = new TH1D(histName.c_str(), histAxis.c_str(), NBinPEProto, MinPEProto, MaxPEProto);
+    //
+    //             #ifdef DEBUG
+    //                 cout << histName << " created." << endl;
+    //             #endif
+    //         }
+    //     }
+    // }
 
-        ToScintiCh* toScintiCh = new ToScintiCh(EScintiType::Printed);
-
-
-        for (int ch = 0; ch < NChEasiroc; ch++)
-        {
-            if (toScintiCh->isConnected(easiroc, ch))
-            {
-                tuple<EScintiSurface, int, int> scintiCh = toScintiCh->getCh(easiroc, ch);
-
-                EScintiSurface surface = get<0> (scintiCh);
-                int horizontal = get<1> (scintiCh);
-                int vertical = get<2> (scintiCh);
-
-                usingProtoCh.push_back(forward_as_tuple(easiroc, ch, surface, horizontal, vertical));
-
-                histName = "hPE";
-                histAxis = "PE ";
-                if (surface == EScintiSurface::XY)
-                {
-                    histName += "X" + to_string(horizontal) + "Y" + to_string(vertical);
-                    histAxis += "X=" + to_string(horizontal) + " Y=" + to_string(vertical) + ";Light yield (p.e.);Number of events";
-                }
-                else if (surface == EScintiSurface::ZY)
-                {
-                    histName += "Z" + to_string(horizontal) + "Y" + to_string(vertical);
-                    histAxis += "Z=" + to_string(horizontal) + " Y=" + to_string(vertical) + ";Light yield (p.e.);Number of events";
-                }
-                else
-                {
-                    histName += "X" + to_string(horizontal) + "Z" + to_string(vertical);
-                    histAxis += "X=" + to_string(horizontal) + " Z=" + to_string(vertical) + ";Light yield (p.e.);Number of events";
-                }
-
-                hPEProtoEach[static_cast<int> (surface)][horizontal][vertical] = new TH1D(histName.c_str(), histAxis.c_str(), NBinPEProto, MinPEProto, MaxPEProto);
-
-                #ifdef DEBUG
-                    cout << histName << " created." << endl;
-                #endif
-            }
-        }
-    }
-
-
-    // Cross talk related
-    const int NBinCT = 100;
-    const double MinCT = 0;
-    const double MaxCT = 1.0;
-    TH1D* hCrossTalkXZ = new TH1D("hCrossTalkXZ", "L.Y. ratio left/center (using Y readout);L.Y. left(ch40)/center(ch41);Number of events", NBinCT, MinCT, MaxCT);
-    TH1D* hCrossTalkXY = new TH1D("hCrossTalkXY", "L.Y. ratio left/center (using Z readout);L.Y. left(ch8)/center(ch9);Number of events", NBinCT, MinCT, MaxCT);
-
-    TH1D* hCrossTalkXYDarkCut = new TH1D("hCrossTalkXYDarkCut", "L.Y. ratio left/center (using Z readout, pedestal cut);L.Y. left(ch8)/center(ch9);Number of events", NBinCT, MinCT, MaxCT);
-    TH1D* hCrossTalkXZDarkCut = new TH1D("hCrossTalkXZDarkCut", "L.Y. ratio left/center (using Y readout, pedestal cut);L.Y. left(ch40)/center(ch41);Number of events", NBinCT, MinCT, MaxCT);
-
-    TH1D* hCrossTalkXYDarkCutEachCell[NScifiEachHodo][NScifiEachHodo];
-    TH1D* hCrossTalkXZDarkCutEachCell[NScifiEachHodo][NScifiEachHodo];
-    for (int i = 0; i < NScifiEachHodo; i++)
-    {
-        for (int j = 0; j < NScifiEachHodo; j++)
-        {
-            histName = "hCrossTalkXYDarkCutX" + to_string(i + 1) + "Y" + to_string(j + 1);
-            histAxis = "L.Y. ratio left/center (using Z readout, Dark count cut, Cell X=" + to_string(i + 1) + " Y=" + to_string(j + 1) + ");L.Y. left(ch8)/center(ch9);Number of events";
-            hCrossTalkXYDarkCutEachCell[i][j] = new TH1D(histName.c_str(), histAxis.c_str(), NBinCT, MinCT, MaxCT);
-
-            histName = "hCrossTalkXZDarkCutX" + to_string(i + 1) + "Y" + to_string(j + 1);
-            histAxis = "L.Y. ratio left/center (using Y readout, Dark count cut, Cell X=" + to_string(i + 1) + " Y=" + to_string(j + 1) + ");L.Y. left(ch40)/center(ch41);Number of events";
-            hCrossTalkXZDarkCutEachCell[i][j] = new TH1D(histName.c_str(), histAxis.c_str(), NBinCT, MinCT, MaxCT);
-        }
-    }
-
-    TGraph* scatterCTXY = new TGraph();
-    TGraph* scatterCTXZ = new TGraph();
-
-    const double MinCTMap = 0;
-    const double MaxCTMap = 6;
-    TH2D* hCrossTalkXYDarkCutMap = new TH2D("hCrossTalkXYDCMap", "Cross talk rate (using Z readout, pedestal cut);cell # along X;cell # along Y;Cross talk rate (%)", NScifiEachHodo, MinHodoMap, MaxHodoMap, NScifiEachHodo, MinHodoMap, MaxHodoMap);
-    TH2D* hCrossTalkXZDarkCutMap = new TH2D("hCrossTalkXZDCMap", "Cross talk rate (using Y readout, pedestal cut);cell # along X;cell # along Y;Cross talk rate (%)", NScifiEachHodo, MinHodoMap, MaxHodoMap, NScifiEachHodo, MinHodoMap, MaxHodoMap);
-    hCrossTalkXYDarkCutMap->SetMinimum(MinCTMap);
-    hCrossTalkXYDarkCutMap->SetMaximum(MaxCTMap);
-    hCrossTalkXZDarkCutMap->SetMinimum(MinCTMap);
-    hCrossTalkXZDarkCutMap->SetMaximum(MaxCTMap);
 
     // Gap check
     const int GapGraphMax = 50000 * 30;
     TH1D* hGapCount1s = new TH1D("hGapCount1s", "Gap count (hodo & proto1s);event # ;gap count", GapGraphMax, 0, GapGraphMax);
     TH1D* hGapCount2s = new TH1D("hGapCount2s", "Gap count (hodo & proto2s);event # ;gap count", GapGraphMax, 0, GapGraphMax);
-
-
 
 
 
@@ -567,38 +568,33 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
 
     bool goodEvent;
     bool singleHit;
-    bool scintiHit;
     bool isStraightBeam;
-    bool goodEventForCT;
+    bool good1cm;
+    bool good2cm;
 
-    // Cross talkヒストグラムの各選別条件に対するフラグ
-    bool goodEventForCTDownOnly;
-    int countCTDownOnly = 0;
-    bool goodEventForCTUpDown;
-    int countCTUpDown = 0;
-    bool goodEventForCTStraight;
-    int countCTStraight = 0;
+    bool scintiHit;
+    bool hodoScintiHit;
 
-    // Cellごとのcross talkヒストグラムに対するフラグ
-    bool goodEventForCTCell;
-    int countCTCell = 0;
+    int countGood = 0;
+    int countSingle = 0;
+    int countStraight = 0;
+    int countGood1cm = 0;
+    int countGood2cm = 0;
+
+    int countScintiHit = 0;
+    int countHodoScintiHit = 0;
 
     array<bool, NHodo> hodoHit;
 
     int gapCount1s = 0;
     int gapCount2s = 0;
 
-    int totalEvt = -1;
+    int totalEvt = 0;
 
     string pt2sfile;
     string pt1sfile;
     string hsfile;
 
-    double centerPEXY;
-    double centerPEXZ;
-    double leftPEXY;
-    double leftPEXZ;
-    int countCTPoint = 0;
 
     for (int j = runnum; j < runnum + fileCount; j++)
     {
@@ -641,6 +637,11 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
 
         TString pt2s_calibname = TString::Format("%s%s.tsv", calibfile_dir.c_str(), pt2sfile_calib.c_str());
         ifstream fin1(pt2s_calibname);
+        if (fin1.fail())
+        {
+            cerr << "Calibration file does not exist!!!" << endl;
+            return;
+        }
         while (fin1 >> inputCh >> mp >> sp >> cnp >> m1 >> s1 >> cn1 >> g)
         {
             mean_ped[0][inputCh] = mp;
@@ -651,6 +652,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
             // chi2_ndf_1pe[0][inputCh] = cn1;
             gain[0][inputCh] = g;
         }
+
 
         // TString pt1s_calibname = TString::Format("%s%s.tsv", calibfile_dir.c_str(), pt1sfile_calib.c_str());
         // ifstream fin2(pt1s_calibname);
@@ -667,6 +669,11 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
 
         TString hs_calibname = TString::Format("%s%s.tsv", calibfile_dir.c_str(), hsfile_calib.c_str());
         ifstream fin3(hs_calibname);
+        if (fin3.fail())
+        {
+            cerr << "Calibration file does not exist!!!" << endl;
+            return;
+        }
         while (fin3 >> inputCh >> mp >> sp >> cnp >> m1 >> s1 >> cn1 >> g)
         {
             mean_ped[2][inputCh] = mp;
@@ -677,6 +684,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
             // chi2_ndf_1pe[2][inputCh] = cn1;
             gain[2][inputCh] = g;
         }
+
 
         TChain* tree1 = new TChain("tree");
         // TChain* tree2 = new TChain("tree");
@@ -695,11 +703,11 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
         cout << "Protype: number of events = " << tree1->GetEntries() << endl;
         cout << "Hodoscope : number of events = " << tree3->GetEntries() << endl;
 
-		if(tree1->GetEntries() == 0 || tree3->GetEntries() == 0)
-		{
-			cerr << "ROOT file does not exist!!!" << endl;
-			return;
-		}
+        if (tree1->GetEntries() == 0 || tree3->GetEntries() == 0)
+        {
+            cerr << "ROOT files do not exist!!!" << endl;
+            return;
+        }
 
         cout << "Select X1:" << "[" << omit_lowx1 + 1 << ", " << 16 - omit_highx1 << "]" << endl;
         cout << "Select Y1:" << "[" << omit_lowy1 + 1 << ", " << 16 - omit_highy1 << "]" << endl;
@@ -714,6 +722,46 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
         {
             less_evt = tree3->GetEntries();
         }
+
+        E3DOption cubePlaceOption = decideOption(j);
+        if (cubePlaceOption == E3DOption::None)
+            return;
+
+        if (cubePlaceOption == E3DOption::WRef2cmP)
+        {
+            minPEEachCellFit = 15.0;
+            maxPEEachCellFit = 35.0;
+        }
+        if (cubePlaceOption == E3DOption::WRef1cmV)
+        {
+            minPEEachCellFit = 3.5;
+            maxPEEachCellFit = 17.5;
+        }
+        if (cubePlaceOption == E3DOption::WRef2cmV)
+        {
+            minPEEachCellFit = 9.14 - 4.285;
+            maxPEEachCellFit = 9.14 + 9.715;
+        }
+        if (cubePlaceOption == E3DOption::WRef1cmP)
+        {
+            minPEEachCellFit = 8.625 - 4.285;
+            maxPEEachCellFit = 8.625 + 9.715;
+        }
+
+
+        #ifdef DEBUG
+            switch (cubePlaceOption)
+            {
+                case E3DOption::WRef1cmP:
+                    cout << "WRef1cmP" << endl;
+                    break;
+                case E3DOption::WRef1cmV:
+                    cout << "WRef1cmV" << endl;
+                    break;
+                default:
+                    break;
+            }
+        #endif
 
         for (int evt = 0; evt < less_evt; evt++)
         {
@@ -759,13 +807,12 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
 
             goodEvent = false;
             singleHit = false;
-            scintiHit = false;
             isStraightBeam = false;
-            goodEventForCT = false;
-            goodEventForCTUpDown = false;
-            goodEventForCTDownOnly = false;
-            goodEventForCTStraight = false;
-            goodEventForCTCell = false;
+            good1cm = false;
+            good2cm = false;
+
+            scintiHit = false;
+            hodoScintiHit = false;
 
             for (int ch = 0; ch < NScifi; ch++)
             {
@@ -810,6 +857,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
             if (count(trigHodo.begin(), trigHodo.end(), true) == NHodo)
             {
                 goodEvent = true;
+                countGood++;
             }
 
             // すべてのホドスコープに1本ずつだけヒット→single hit
@@ -817,6 +865,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
             if (count(hitCountHodo.begin(), hitCountHodo.end(), 1) == NHodo)
             {
                 singleHit = true;
+                countSingle++;
             }
             else
             {
@@ -827,13 +876,21 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
             if (singleHit && maxChHodo[static_cast<int> (EHodoscope::HSX1)] == maxChHodo[static_cast<int> (EHodoscope::HSX2)] && maxChHodo[static_cast<int> (EHodoscope::HSY1)] == maxChHodo[static_cast<int> (EHodoscope::HSY2)])
             {
                 isStraightBeam = true;
+                countStraight++;
+                countHodoHitEachCell[maxChHodo[static_cast<int> (EHodoscope::HSX1)] - 1][maxChHodo[static_cast<int> (EHodoscope::HSY1)] - 1]++;
             }
 
 
-            if (goodEvent && singleHit)
+            if (singleHit)
             {
                 hHodoHitMapUp->Fill(maxChHodo[static_cast<int> (EHodoscope::HSX1)], maxChHodo[static_cast<int> (EHodoscope::HSY1)]);
                 hHodoHitMapDown->Fill(maxChHodo[static_cast<int> (EHodoscope::HSX2)], maxChHodo[static_cast<int> (EHodoscope::HSY2)]);
+            }
+
+            if (!goodEvent && singleHit)
+            {
+                cerr << "!goodEvent && singleHit" << endl;
+                return;
             }
 
             if (isStraightBeam)
@@ -841,169 +898,102 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
                 hHodoHitMapWithStraightBeam->Fill(maxChHodo[static_cast<int> (EHodoscope::HSX2)], maxChHodo[static_cast<int> (EHodoscope::HSY2)]);
             }
 
-            // Cross talkを出す用のGood eventフラグ（3つの条件があるが、そのうち1つを下で選択している）
-            if (isStraightBeam && maxChHodo[static_cast<int> (EHodoscope::HSX2)] >= hodoLowXForCT && maxChHodo[static_cast<int> (EHodoscope::HSX2)] <= hodoHighXForCT && maxChHodo[static_cast<int> (EHodoscope::HSY2)] >= hodoLowYForCT && maxChHodo[static_cast<int> (EHodoscope::HSY2)] <= hodoHighYForCT)
+            if (singleHit &&
+                maxChHodo[static_cast<int> (EHodoscope::HSX2)] >= hodoLowXFor1cm && maxChHodo[static_cast<int> (EHodoscope::HSX2)] <= hodoHighXFor1cm && maxChHodo[static_cast<int> (EHodoscope::HSY2)] >= hodoLowYFor1cm && maxChHodo[static_cast<int> (EHodoscope::HSY2)] <= hodoHighYFor1cm &&
+                maxChHodo[static_cast<int> (EHodoscope::HSX1)] >= hodoLowXFor1cm && maxChHodo[static_cast<int> (EHodoscope::HSX1)] <= hodoHighXFor1cm && maxChHodo[static_cast<int> (EHodoscope::HSY1)] >= hodoLowYFor1cm && maxChHodo[static_cast<int> (EHodoscope::HSY1)] <= hodoHighYFor1cm)
             {
-                goodEventForCTStraight = true;
-                countCTStraight++;
+                good1cm = true;
+                countGood1cm++;
             }
-            if (goodEvent && singleHit &&
-                maxChHodo[static_cast<int> (EHodoscope::HSX2)] >= hodoLowXForCT && maxChHodo[static_cast<int> (EHodoscope::HSX2)] <= hodoHighXForCT && maxChHodo[static_cast<int> (EHodoscope::HSY2)] >= hodoLowYForCT && maxChHodo[static_cast<int> (EHodoscope::HSY2)] <= hodoHighYForCT &&
-                maxChHodo[static_cast<int> (EHodoscope::HSX1)] >= hodoLowXForCT && maxChHodo[static_cast<int> (EHodoscope::HSX1)] <= hodoHighXForCT && maxChHodo[static_cast<int> (EHodoscope::HSY1)] >= hodoLowYForCT && maxChHodo[static_cast<int> (EHodoscope::HSY1)] <= hodoHighYForCT)
+            if (singleHit &&
+                maxChHodo[static_cast<int> (EHodoscope::HSX2)] >= hodoLowXFor2cm && maxChHodo[static_cast<int> (EHodoscope::HSX2)] <= hodoHighXFor2cm && maxChHodo[static_cast<int> (EHodoscope::HSY2)] >= hodoLowYFor2cm && maxChHodo[static_cast<int> (EHodoscope::HSY2)] <= hodoHighYFor2cm &&
+                maxChHodo[static_cast<int> (EHodoscope::HSX1)] >= hodoLowXFor2cm && maxChHodo[static_cast<int> (EHodoscope::HSX1)] <= hodoHighXFor2cm && maxChHodo[static_cast<int> (EHodoscope::HSY1)] >= hodoLowYFor2cm && maxChHodo[static_cast<int> (EHodoscope::HSY1)] <= hodoHighYFor2cm)
             {
-                goodEventForCTUpDown = true;
-                countCTUpDown++;
+                good2cm = true;
+                countGood2cm++;
             }
-            if (goodEvent && singleHit && maxChHodo[static_cast<int> (EHodoscope::HSX2)] >= hodoLowXForCT && maxChHodo[static_cast<int> (EHodoscope::HSX2)] <= hodoHighXForCT && maxChHodo[static_cast<int> (EHodoscope::HSY2)] >= hodoLowYForCT && maxChHodo[static_cast<int> (EHodoscope::HSY2)] <= hodoHighYForCT)
-            {
-                goodEventForCTDownOnly = true;
-                countCTDownOnly++;
-            }
-
-            // goodEventForCT = goodEventForCTStraight;
-            goodEventForCT = goodEventForCTUpDown;
-
-            // CellごとのCross talk分布出す用
-            if (isStraightBeam && maxChHodo[static_cast<int> (EHodoscope::HSX2)] >= hodoLowXForCTCell && maxChHodo[static_cast<int> (EHodoscope::HSX2)] <= hodoHighXForCTCell && maxChHodo[static_cast<int> (EHodoscope::HSY2)] >= hodoLowYForCTCell && maxChHodo[static_cast<int> (EHodoscope::HSY2)] <= hodoHighYForCTCell)
-            {
-                goodEventForCTCell = true;
-                countCTCell++;
-            }
-
-
 
 
             // prototype loop
-            for (auto itr = usingProtoCh.begin(); itr != usingProtoCh.end(); ++itr)
+            EEasiroc easiroc = EEasiroc::Scinti2;
+            int easirocCh = 9;
+            EScintiSurface surface = EScintiSurface::ZY;
+            int horizontal = 3;
+            int vertical = 3;
+
+            pe[static_cast<int> (easiroc)][easirocCh] = (double(adc[static_cast<int> (easiroc)][easirocCh]) - mean_ped[static_cast<int> (easiroc)][easirocCh]) / gain[static_cast<int> (easiroc)][easirocCh];
+            hProto[static_cast<int> (surface)]->SetBinContent(horizontal, vertical, pe[static_cast<int> (easiroc)][easirocCh]);
+
+            if (pe[static_cast<int> (easiroc)][easirocCh] > ProtoPEThreshold)
             {
-                EEasiroc easiroc = get<0> (*itr);
-                int easirocCh = get<1> (*itr);
-                EScintiSurface surface = get<2> (*itr);
-                int horizontal = get<3> (*itr);
-                int vertical = get<4> (*itr);
+                hHitRateProto[static_cast<int> (surface)]->Fill(horizontal, vertical);
+                hPEProto->Fill(pe[static_cast<int> (easiroc)][easirocCh]);
 
-                pe[static_cast<int> (easiroc)][easirocCh] = (double(adc[static_cast<int> (easiroc)][easirocCh]) - mean_ped[static_cast<int> (easiroc)][easirocCh]) / gain[static_cast<int> (easiroc)][easirocCh];
-                // pe[static_cast <int>(easiroc)][easirocCh] = double(floor(pe[static_cast <int>(easiroc)][easirocCh] * 10) / 10);
-
-                hProto[static_cast<int> (surface)]->SetBinContent(horizontal, vertical, pe[static_cast<int> (easiroc)][easirocCh]);
-
-
-
-                if (pe[static_cast<int> (easiroc)][easirocCh] > ProtoPEThreshold)
+                scintiHit = true;
+                countScintiHit++;
+                if (isStraightBeam)
                 {
-                    hHitRateProto[static_cast<int> (surface)]->Fill(horizontal, vertical);
-                    hPEProto[static_cast<int> (surface)]->Fill(pe[static_cast<int> (easiroc)][easirocCh]);
-                    hPEProtoEach[static_cast<int> (surface)][horizontal][vertical]->Fill(pe[static_cast<int> (easiroc)][easirocCh]);
+                    countScintiHodoHitEachCell[maxChHodo[static_cast<int> (EHodoscope::HSX1)] - 1][maxChHodo[static_cast<int> (EHodoscope::HSY1)] - 1]++;
+                }
 
-                    scintiHit = true;
+                if (surface == EScintiSurface::XY && pe[static_cast<int> (easiroc)][easirocCh] > maxPEProtoXOfXY)
+                {
+                    maxChProtoXOfXY = horizontal;
+                    maxPEProtoXOfXY = pe[static_cast<int> (easiroc)][easirocCh];
+                }
+                if (surface == EScintiSurface::XZ && pe[static_cast<int> (easiroc)][easirocCh] > maxPEProtoXOfXZ)
+                {
+                    maxChProtoXOfXZ = horizontal;
+                    maxPEProtoXOfXZ = pe[static_cast<int> (easiroc)][easirocCh];
+                }
 
-                    if (goodEvent && singleHit)
-                    {
-                        // hPEProtoGood[static_cast<int> (surface)]->Fill(pe[static_cast<int> (easiroc)][easirocCh]);
-                    }
-
-                    if (surface == EScintiSurface::XY && pe[static_cast<int> (easiroc)][easirocCh] > maxPEProtoXOfXY)
-                    {
-                        maxChProtoXOfXY = horizontal;
-                        maxPEProtoXOfXY = pe[static_cast<int> (easiroc)][easirocCh];
-                    }
-                    if (surface == EScintiSurface::XZ && pe[static_cast<int> (easiroc)][easirocCh] > maxPEProtoXOfXZ)
-                    {
-                        maxChProtoXOfXZ = horizontal;
-                        maxPEProtoXOfXZ = pe[static_cast<int> (easiroc)][easirocCh];
-                    }
+                // 2cm vertical に対するホドスコープ領域ヒットかつシンチヒット
+                if (cubePlaceOption == E3DOption::WRef2cmV && good2cm)
+                {
+                    hodoScintiHit = true;
+                    countHodoScintiHit++;
+                }
+                else if (good1cm)
+                {
+                    // if(cubePlaceOption == E3DOption::None) cerr << "cube option error!!!" << endl;
+                    hodoScintiHit = true;
+                    countHodoScintiHit++;
                 }
             }
 
-            centerPEXY = pe[static_cast<int> (EEasiroc::Scinti1)][9];
-            leftPEXY = pe[static_cast<int> (EEasiroc::Scinti1)][8];
-            centerPEXZ = pe[static_cast<int> (EEasiroc::Scinti2)][41];
-            leftPEXZ = pe[static_cast<int> (EEasiroc::Scinti2)][40];
-
-            // ホドスコープ内側4ch×4ch（または2×2）ヒットをクロストークのヒストグラムに使う
-            if (goodEventForCT)
+            // hodoscope area good のときのシンチ光量分布
+            if (good1cm && is1cmArea(cubePlaceOption))
             {
-                hCrossTalkXY->Fill(leftPEXY / centerPEXY);
-                hCrossTalkXZ->Fill(leftPEXZ / centerPEXZ);
+                hPEProtoGood->Fill(pe[static_cast<int> (easiroc)][easirocCh]);
+            }
+            if (good2cm && !is1cmArea(cubePlaceOption))
+            {
+                hPEProtoGood->Fill(pe[static_cast<int> (easiroc)][easirocCh]);
+            }
 
-                if (leftPEXY < DarkCutPEForCT)
-                {
-                    hCrossTalkXYDarkCut->Fill(0);
-                }
-                else
-                {
-                    hCrossTalkXYDarkCut->Fill(leftPEXY / centerPEXY);
-                }
-                if (leftPEXZ < DarkCutPEForCT)
-                {
-                    hCrossTalkXZDarkCut->Fill(0);
-                }
-                else
-                {
-                    hCrossTalkXZDarkCut->Fill(leftPEXZ / centerPEXZ);
-                }
-
-                scatterCTXY->SetPoint(countCTPoint, centerPEXY, leftPEXY);
-                scatterCTXZ->SetPoint(countCTPoint, centerPEXZ, leftPEXZ);
-
-                hPECenterForCTXY->Fill(centerPEXY);
-                hPECenterForCTXZ->Fill(centerPEXZ);
-                hPELeftForCTXY->Fill(leftPEXY);
-                hPELeftForCTXZ->Fill(leftPEXZ);
-                countCTPoint++;
+            // セルごとの光量分布
+            if (isStraightBeam)
+            {
+                hPEProtoGoodCell[maxChHodo[static_cast<int> (EHodoscope::HSX2)] - 1][maxChHodo[static_cast<int> (EHodoscope::HSY2)] - 1]->Fill(pe[static_cast<int> (easiroc)][easirocCh]);
             }
 
 
-            // セルごとのクロストーク
-            if (goodEventForCTCell)
-            {
-                #ifdef DEBUG
-
-                    if (leftPEXZ / centerPEXZ > 0.1 && leftPEXZ < centerPEXZ && leftPEXZ >= DarkCutPEForCT && maxChHodo[static_cast<int> (EHodoscope::HSX2)] == 9 && maxChHodo[static_cast<int> (EHodoscope::HSY2)] <= 5)
-                    {
-                        cout << "selected Hodo Ch: HSX2=" << maxChHodo[static_cast<int> (EHodoscope::HSX2)] << " (" << maxPEHodo[static_cast<int> (EHodoscope::HSX2)] <<  " p.e.), HSY2=" << maxChHodo[static_cast<int> (EHodoscope::HSY2)] << " (" << maxPEHodo[static_cast<int> (EHodoscope::HSY2)] <<  " p.e.)" << endl;
-                        cout << "evt=" << totalEvt << ", XZ, left: " << leftPEXZ << ", center: " << centerPEXZ << endl;
-                    }
-                    if (leftPEXY / centerPEXY > 0.1 && leftPEXY < centerPEXY && leftPEXY >= DarkCutPEForCT && maxChHodo[static_cast<int> (EHodoscope::HSX2)] == 9 && maxChHodo[static_cast<int> (EHodoscope::HSY2)] <= 5)
-                    {
-                        cout << "selected Hodo Ch: HSX2=" << maxChHodo[static_cast<int> (EHodoscope::HSX2)] << " (" << maxPEHodo[static_cast<int> (EHodoscope::HSX2)] <<  " p.e.), HSY2=" << maxChHodo[static_cast<int> (EHodoscope::HSY2)] << " (" << maxPEHodo[static_cast<int> (EHodoscope::HSY2)] <<  " p.e.)" << endl;
-                        cout << "evt=" << totalEvt << ", XY, left: " << leftPEXY << ", center: " << centerPEXY << endl;
-                    }
-                #endif
-                if (leftPEXY < DarkCutPEForCT)
-                {
-                    hCrossTalkXYDarkCutEachCell[maxChHodo[static_cast<int> (EHodoscope::HSX2)] - 1][maxChHodo[static_cast<int> (EHodoscope::HSY2)] - 1]->Fill(0);
-                }
-                else // if(leftPEXY*RatioCutForCT < centerPEXY)
-                {
-                    hCrossTalkXYDarkCutEachCell[maxChHodo[static_cast<int> (EHodoscope::HSX2)] - 1][maxChHodo[static_cast<int> (EHodoscope::HSY2)] - 1]->Fill(leftPEXY / centerPEXY);
-                }
-                if (leftPEXZ < DarkCutPEForCT)
-                {
-                    hCrossTalkXZDarkCutEachCell[maxChHodo[static_cast<int> (EHodoscope::HSX2)] - 1][maxChHodo[static_cast<int> (EHodoscope::HSY2)] - 1]->Fill(0);
-                }
-                else // if(leftPEXZ*RatioCutForCT < centerPEXZ)
-                {
-                    hCrossTalkXZDarkCutEachCell[maxChHodo[static_cast<int> (EHodoscope::HSX2)] - 1][maxChHodo[static_cast<int> (EHodoscope::HSY2)] - 1]->Fill(leftPEXZ / centerPEXZ);
-                }
-            }
-
-
-            if (isGap(maxChHodo[static_cast<int> (EHodoscope::HSX2)], maxChHodo[static_cast<int> (EHodoscope::HSY2)], maxChProtoXOfXY, shiftHSX2, shiftHSY2))
-            {
-                gapCount1s++;
-            }
-            if (isGap(maxChHodo[static_cast<int> (EHodoscope::HSX2)], maxChHodo[static_cast<int> (EHodoscope::HSY2)], maxChProtoXOfXZ, shiftHSX2, shiftHSY2))
+            // gap check
+            // if (isGap(maxChHodo[static_cast<int> (EHodoscope::HSX2)], maxChHodo[static_cast<int> (EHodoscope::HSY2)], maxChProtoXOfXY, shiftHSX2, shiftHSY2))
+            // {
+            //     gapCount1s++;
+            // }
+            if (isGap(maxChHodo[static_cast<int> (EHodoscope::HSX2)], maxChHodo[static_cast<int> (EHodoscope::HSY2)], scintiHit, cubePlaceOption, shiftHSX2, shiftHSY2))
             {
                 gapCount2s++;
             }
-            hGapCount1s->SetBinContent(totalEvt, gapCount1s);
+            // hGapCount1s->SetBinContent(totalEvt, gapCount1s);
             hGapCount2s->SetBinContent(totalEvt, gapCount2s);
 
 
             // Draw event display
             // if (evt >= min_evt && evt <= max_evt && runnum == j && goodEvent && scintiHit)
-            if (totalEvt >= min_evt && totalEvt <= max_evt && goodEventForCTCell)
+            if (totalEvt >= min_evt && totalEvt <= max_evt)
             {
                 const int NHistHori = 4;
                 const int NHistVert = 2;
@@ -1060,6 +1050,16 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
         }
     }
 
+    cout << endl << "--------------event loop end--------------" << endl;
+    cout << "total event: " << totalEvt << endl;
+    cout << "good event: " << countGood << endl;
+    cout << "single hit event: " << countSingle << endl;
+    cout << "straight beam event: " << countStraight << endl;
+    cout << "good1cm event: " << countGood1cm << endl;
+    cout << "good2cm event: " << countGood2cm << endl;
+    cout << "scinti hit: " << countScintiHit << endl;
+    cout << "hodoscope & scinti hit: " << countHodoScintiHit << endl;
+
 
     // Draw Histograms
     int nHistHori = 4;
@@ -1115,6 +1115,10 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
     canvas->Clear();
 
     // LY (overall)
+    nHistHori = 3;
+    nHistVert = 2;
+    hodoHistOrder = { 4, 1, 3, 6 };
+    // array<int, NSurfaceScinti> protoHistOrder = { 2, 7 };
     canvas = new TCanvas("canvas", "", histWidth * nHistHori, histHeight * nHistVert);
     canvas->Divide(nHistHori, nHistVert);
     for (int i = 0; i < NHodo; i++)
@@ -1128,18 +1132,15 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
         hPEHodo[i]->SetMarkerSize(MarkerSize);
         hPEHodo[i]->Draw();
     }
-    for (int i = 0; i < NSurfaceScinti; i++)
-    {
-        canvas->cd(protoHistOrder[i]);
-        hPEProto[i]->GetYaxis()->SetTitleSize(TitleSize);
-        hPEProto[i]->GetXaxis()->SetTitleSize(TitleSize);
-        hPEProto[i]->GetYaxis()->SetLabelSize(LabelSize);
-        hPEProto[i]->GetXaxis()->SetLabelSize(LabelSize);
-        // hPEProto[i]->GetXaxis()->SetNdivisions(5);
-        // hPEProto[i]->GetYaxis()->SetNdivisions(5);
-        hPEProto[i]->SetMarkerSize(MarkerSize);
-        hPEProto[i]->Draw();
-    }
+    canvas->cd(2);
+    hPEProto->GetYaxis()->SetTitleSize(TitleSize);
+    hPEProto->GetXaxis()->SetTitleSize(TitleSize);
+    hPEProto->GetYaxis()->SetLabelSize(LabelSize);
+    hPEProto->GetXaxis()->SetLabelSize(LabelSize);
+    // hPEProto->GetXaxis()->SetNdivisions(5);
+    // hPEProto->GetYaxis()->SetNdivisions(5);
+    hPEProto->SetMarkerSize(MarkerSize);
+    hPEProto->Draw();
 
     figName = TString::Format("%sPE_%04d_%04d.%s", ResultDir.c_str(), runnum, subrun, outputFileType.c_str());
     canvas->SaveAs(figName);
@@ -1147,35 +1148,125 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
 
 
     // Light yield (each prototype channel)
-    for (auto itr = usingProtoCh.begin(); itr != usingProtoCh.end(); ++itr)
-    {
-        EEasiroc easiroc = get<0> (*itr);
-        int easirocCh = get<1> (*itr);
-        EScintiSurface surface = get<2> (*itr);
-        int horizontal = get<3> (*itr);
-        int vertical = get<4> (*itr);
+    canvas = new TCanvas();
+    hPEProto->Draw();
+    // gPad->SetLogy();
+    string chName = "ZY=(3,3)";
+    figName = TString::Format("%sPE_%s_%04d_%04d.%s", ScintiPEDir.c_str(), chName.c_str(), runnum, subrun, outputFileType.c_str());
+    canvas->SaveAs(figName);
+    canvas->Clear();
 
-        string chName;
-        if (surface == EScintiSurface::XY)
+    // Light yield (scintillator good event)
+    TFile histScintiPEGood(TString::Format("%sPEProtoGood_%04d_%04d.root", ResultDir.c_str(), runnum, subrun), "RECREATE");
+    canvas = new TCanvas();
+    hPEProtoGood->Draw();
+    hPEProtoGood->Write();
+    figName = TString::Format("%sPEProtoGood_%04d_%04d.%s", ResultDir.c_str(), runnum, subrun, outputFileType.c_str());
+    canvas->SaveAs(figName);
+    histScintiPEGood.Close();
+    canvas->Clear();
+
+
+    // Light yield (scintillator each cell)
+    TFile histsScintiPEEachCell(TString::Format("%sPEEachCell_%04d_%04d.root", CellPEDir.c_str(), runnum, subrun), "RECREATE");
+    // TF1* landau = new TF1("");
+    gStyle->SetOptFit(111);
+    canvas = new TCanvas();
+    for (int y = 0; y < NScifiEachHodo; y++)
+    {
+        for (int x = 0; x < NScifiEachHodo; x++)
         {
-            chName = "XY=(" + to_string(horizontal) + "," + to_string(vertical) + ")";
+            hPEProtoGoodCell[x][y]->Fit("landau", FitOption, "", minPEEachCellFit, maxPEEachCellFit);
+            TF1* lan = (TF1 *) gROOT->FindObject("landau");
+            double mean = hPEProtoGoodCell[x][y]->GetMean();
+            double mpv = lan->GetParameter("MPV");
+            #ifdef DEBUG
+                // cout << "(X,Y)=(" << x+1 << "," << y+1 << "): mean=" << hPEProtoGoodCell[x][y]->GetMean() << ", MPV=" << lan->GetParameter("MPV") << endl;
+                cout << TString::Format("(X,Y)") << endl;
+            #endif
+            if (mean < CutPEForEachCell)
+            {
+                hPEProtoHodoMap->SetBinContent(x + 1, y + 1, 0);
+            }
+            else
+            {
+                hPEProtoHodoMap->SetBinContent(x + 1, y + 1, mpv);
+            }
+            hPEProtoHodoMapMean->SetBinContent(x + 1, y + 1, mean);
+            hPEProtoGoodCell[x][y]->Draw();
+            hPEProtoGoodCell[x][y]->Write();
+            figName = TString::Format("%sPECellXY=(%d,%d)_%04d_%04d.%s", CellPEDir.c_str(), x + 1, y + 1, runnum, subrun, outputFileType.c_str());
+            // canvas->SaveAs(figName);
         }
-        else if (surface == EScintiSurface::ZY)
+    }
+    histsScintiPEEachCell.Close();
+    canvas->Clear();
+
+
+    // Light yield (scintillator eacy Y cell)
+    // gStyle->SetOptFit(111);
+    if (isVertical(decideOption(runnum)))
+    {
+        array<int, 2> rangeHSXForEachY;
+        const array<int, 2> RangeHSYForEachY = { 7, 11 };
+        if (is1cmArea(decideOption(runnum)))
         {
-            chName = "ZY=(" + to_string(horizontal) + "," + to_string(vertical) + ")";
+            rangeHSXForEachY = { 5, 11 };
         }
         else
         {
-            chName = "XZ=(" + to_string(horizontal) + "," + to_string(vertical) + ")";
+            rangeHSXForEachY = { 3, 14 };
         }
 
-        canvas = new TCanvas();
-        hPEProtoEach[static_cast<int> (surface)][horizontal][vertical]->Draw();
+        TFile histsScintiPEEachY(TString::Format("%sPEEachY_%04d_%04d.root", CellPEDir.c_str(), runnum, subrun), "RECREATE");
+        TH1D* hPEProtoGoodY[NScifiEachHodo];
+        TGraphErrors* distanceToFiberVsLY = new TGraphErrors();
 
-        figName = TString::Format("%sPE_%s_%04d_%04d.%s", ScintiPEDir.c_str(), chName.c_str(), runnum, subrun, outputFileType.c_str());
+        canvas = new TCanvas();
+        for (int y = RangeHSYForEachY[0] - 1; y < RangeHSYForEachY[1]; y++)
+        {
+            histName = "hPEEachY_ZY_Y" + to_string(y + 1);
+            histAxis = "PE ZY Y = " + to_string(y + 1) + ";Light yield (p.e.);Number of events";
+            hPEProtoGoodY[y] = new TH1D(histName.c_str(), histAxis.c_str(), NBinPEProto, MinPEProto, MaxPEProto);
+
+            for (int x = rangeHSXForEachY[0] - 1; x < rangeHSXForEachY[1]; x++)
+            {
+                hPEProtoGoodY[y]->Add(hPEProtoGoodCell[x][y], 1);
+            }
+            hPEProtoGoodY[y]->Fit("landau", FitOption, "", minPEEachCellFit+(y-RangeHSYForEachY[0]+1)*0.48, maxPEEachCellFit+(y-RangeHSYForEachY[0]+1)*0.48-5);
+            TF1* lan = (TF1 *) gROOT->FindObject("landau");
+            double mpv = lan->GetParameter(1);
+            distanceToFiberVsLY->SetPoint(y - RangeHSYForEachY[0] + 1, (RangeHSYForEachY[1] - y - 1) * HodoWidth, mpv);
+            distanceToFiberVsLY->SetPointError(y - RangeHSYForEachY[0] + 1, HodoWidth / 2, lan->GetParError(1));
+            #ifdef DEBUG
+                cout << (RangeHSYForEachY[1] - y - 1) << endl;
+            #endif
+            canvas = new TCanvas();
+            hPEProtoGoodY[y]->Draw();
+            hPEProtoGoodY[y]->Write();
+        }
+        histsScintiPEEachY.Close();
+        canvas->Clear();
+
+        // Distance of beam hit position to fiber
+        TFile graphDisVsLY(TString::Format("%sDisVsLY_%04d_%04d.root", ResultDir.c_str(), runnum, subrun), "RECREATE");
+        canvas = new TCanvas();
+        distanceToFiberVsLY->SetTitle("Distance of beam hit position to fiber vs. L.Y.");
+        distanceToFiberVsLY->GetXaxis()->SetTitle("Distance of beam hit position to fiber (mm)");
+        distanceToFiberVsLY->GetYaxis()->SetTitle("Light yield (p.e.)");
+        // distanceToFiberVsLY->Fit("pol1", FitOption, "", -0.5, HodoWidth * 5 + 0.5);
+        TF1* myPol1 = new TF1("mypol1", "[0]+[1]*x", -0.5, HodoWidth * 5 + 0.5);
+        myPol1->SetParameters(8.5, -0.5);
+        distanceToFiberVsLY->Fit("mypol1", FitOption, "", -0.5, HodoWidth * 5 + 0.5);
+        distanceToFiberVsLY->GetXaxis()->SetRangeUser(-0.5, HodoWidth * 5 + 0.5);
+        distanceToFiberVsLY->Draw("AP");
+        distanceToFiberVsLY->Write();
+        figName = TString::Format("%sDistanceToFiberVsLY_%04d_%04d.%s", ResultDir.c_str(), runnum, subrun, outputFileType.c_str());
         canvas->SaveAs(figName);
+        graphDisVsLY.Close();
         canvas->Clear();
     }
+
 
 
     // Light yield (each hodoscope channel)
@@ -1191,187 +1282,25 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
     }
 
 
-    #ifdef DEBUG
-        cout << endl << "--------------event loop end--------------" << endl << "total event: " << totalEvt << endl;
-    #endif
-
-
-
-
-    // Cross talk
-    // normal
-    nHistHori = 2;
-    nHistVert = 1;
-    canvas = new TCanvas("canvas", "", histWidth * nHistHori, histHeight * nHistVert);
-    canvas->Divide(nHistHori, nHistVert);
-    canvas->cd(1);
-    hCrossTalkXY->Draw();
-    TF1* poissonFix = new TF1("poissonFix", "[0]*TMath::Poisson(x*[1], [1]*[2])", FitRangeCT[0], FitRangeCT[1]);
-    poissonFix->SetParameters(300, 100, 0.04);
-    hCrossTalkXY->Fit("poissonFix", FitOption, "", FitRangeCT[0], FitRangeCT[1]);
-    gStyle->SetOptStat(1110);
-    gStyle->SetOptFit(111);
-    changestatsBoxSize(hCrossTalkXY, 0.7, 0.99, 0.65, 0.935);
-
-    canvas->cd(2);
-    hCrossTalkXZ->Draw();
-    poissonFix->SetParameters(300, 100, 0.04);
-    hCrossTalkXZ->Fit("poissonFix", FitOption, "", FitRangeCT[0], FitRangeCT[1]);
-    gStyle->SetOptStat(1110);
-    gStyle->SetOptFit(111);
-    changestatsBoxSize(hCrossTalkXY, 0.7, 0.99, 0.65, 0.935);
-
-    figName = TString::Format("%sCrossTalk_%04d_%04d.%s", ResultDir.c_str(), runnum, subrun, outputFileType.c_str());
-    canvas->SaveAs(figName);
-    canvas->Clear();
-
-    // dark count cut
-    canvas = new TCanvas("canvas", "", histWidth * nHistHori, histHeight * nHistVert);
-    canvas->Divide(nHistHori, nHistVert);
-
-    canvas->cd(1);
-    hCrossTalkXYDarkCut->Draw();
-    poissonFix->SetParameters(300, 100, 0.01);
-    hCrossTalkXYDarkCut->Fit("poissonFix", FitOption, "", FitRangeCTDarkCut[0], FitRangeCTDarkCut[1]);
-    gStyle->SetOptStat(1110);
-    gStyle->SetOptFit(111);
-    changestatsBoxSize(hCrossTalkXY, 0.7, 0.99, 0.65, 0.935);
-
-    canvas->cd(2);
-    hCrossTalkXZDarkCut->Draw();
-    poissonFix->SetParameters(300, 100, 0.01);
-    hCrossTalkXZDarkCut->Fit("poissonFix", FitOption, "", FitRangeCTDarkCut[0], FitRangeCTDarkCut[1]);
-    gStyle->SetOptStat(1110);
-    gStyle->SetOptFit(111);
-    changestatsBoxSize(hCrossTalkXZ, 0.7, 0.99, 0.65, 0.935);
-
-    figName = TString::Format("%sCrossTalkDarkCut_%04d_%04d.%s", ResultDir.c_str(), runnum, subrun, outputFileType.c_str());
-    canvas->SaveAs(figName);
-    canvas->Clear();
-
-    // center only
-    TFile histsCenter(TString::Format("%sPECenter_%04d_%04d.root", ResultDir.c_str(), runnum, subrun), "RECREATE");
-    canvas = new TCanvas("canvas", "", histWidth * nHistHori, histHeight * nHistVert);
-    canvas->Divide(nHistHori, nHistVert);
-    canvas->cd(1);
-    hPECenterForCTXY->Fit("landau", FitOption, "", FitRangePECenterXY[0], FitRangePECenterXY[1]);
-    hPECenterForCTXY->Draw();
-    hPECenterForCTXY->Write();
-
-    canvas->cd(2);
-    hPECenterForCTXZ->Fit("landau", FitOption, "", FitRangePECenterXZ[0], FitRangePECenterXZ[1]);
-    hPECenterForCTXZ->Draw();
-    hPECenterForCTXZ->Write();
-    histsCenter.Close();
-
-    figName = TString::Format("%sPECenter_%04d_%04d.%s", ResultDir.c_str(), runnum, subrun, outputFileType.c_str());
-    canvas->SaveAs(figName);
-    canvas->Clear();
-
-    // left only
-    TF1* poissonI = new TF1("poissonI", "[0]*TMath::PoissonI(x+0.5, [1])", 0, 10);
-    TFile histsLeft(TString::Format("%sPELeft_%04d_%04d.root", ResultDir.c_str(), runnum, subrun), "RECREATE");
-    canvas = new TCanvas("canvas", "", histWidth * nHistHori, histHeight * nHistVert);
-    canvas->Divide(nHistHori, nHistVert);
-    canvas->cd(1);
-    poissonI->SetParameters(3000, 0.5);
-    hPELeftForCTXY->Fit("poissonI", FitOption, "", FitRangePELeftXY[0], FitRangePELeftXY[1]);
-    hPELeftForCTXY->Draw();
-    hPELeftForCTXY->Write();
-
-    canvas->cd(2);
-    poissonI->SetParameters(3000, 0.5);
-    hPELeftForCTXZ->Fit("poissonI", FitOption, "", FitRangePELeftXZ[0], FitRangePELeftXZ[1]);
-    hPELeftForCTXZ->Draw();
-    hPELeftForCTXZ->Write();
-    histsLeft.Close();
-
-    figName = TString::Format("%sPELeft_%04d_%04d.%s", ResultDir.c_str(), runnum, subrun, outputFileType.c_str());
-    canvas->SaveAs(figName);
-    canvas->Clear();
-
-    // Each Cell
-    TFile histsCTXYDarkCutEachCell(TString::Format("%sCrossTalkXYDarkCutEachCell_%04d_%04d.root", ResultDir.c_str(), runnum, subrun), "RECREATE");
-    canvas = new TCanvas();
-    for (int i = 0; i < NScifiEachHodo; i++)
-    {
-        for (int j = 0; j < NScifiEachHodo; j++)
-        {
-            hCrossTalkXYDarkCutEachCell[j][i]->Draw();
-            hCrossTalkXYDarkCutEachCell[j][i]->Write();
-            hCrossTalkXYDarkCutMap->SetBinContent(j + 1, i + 1, hCrossTalkXYDarkCutEachCell[j][i]->GetMean() * 100); // *100 means percentile
-        }
-    }
-    histsCTXYDarkCutEachCell.Close();
-    canvas->Clear();
-
-    TFile histsCTXZDarkCutEachCell(TString::Format("%sCrossTalkXZDarkCutEachCell_%04d_%04d.root", ResultDir.c_str(), runnum, subrun), "RECREATE");
-    canvas = new TCanvas();
-    for (int i = 0; i < NScifiEachHodo; i++)
-    {
-        for (int j = 0; j < NScifiEachHodo; j++)
-        {
-            hCrossTalkXZDarkCutEachCell[j][i]->Draw();
-            hCrossTalkXZDarkCutEachCell[j][i]->Write();
-            hCrossTalkXZDarkCutMap->SetBinContent(j + 1, i + 1, hCrossTalkXZDarkCutEachCell[j][i]->GetMean() * 100);  // *100 means percentile
-        }
-    }
-    histsCTXZDarkCutEachCell.Close();
-    canvas->Clear();
-
-
-
-    // scatter plot of cross talk
-    cout << "Straight: " << countCTStraight << endl;
-    cout << "UpDown: " << countCTUpDown << endl;
-    cout << "DownOnly: " << countCTDownOnly << endl;
-    cout << "EachCell: " << countCTCell << endl;
-    canvas = new TCanvas("canvas", "", histWidth * nHistHori, histHeight * nHistVert);
-    canvas->Divide(nHistHori, nHistVert);
-    canvas->cd(1);
-    gStyle->SetOptFit(111);
-    scatterCTXY->Fit("pol1", FitOption, "", MinPEScatterCTCenter, MaxPEScatterCTCenter);
-    scatterCTXY->SetTitle("L.Y. left vs center (using Z readout)");
-    scatterCTXY->GetYaxis()->SetTitle("L.Y. left (ch9) (p.e.)");
-    scatterCTXY->GetXaxis()->SetTitle("L.Y. center (ch8) (p.e.)");
-    scatterCTXY->GetXaxis()->SetRangeUser(MinPEScatterCTCenter, MaxPEScatterCTCenter);
-    scatterCTXY->GetYaxis()->SetRangeUser(MinPEScatterCTLeft, MaxPEScatterCTLeft);
-    scatterCTXY->Draw("AP");
-    canvas->cd(2);
-    scatterCTXZ->SetTitle("L.Y. left vs center (using Y readout)");
-    scatterCTXZ->GetYaxis()->SetTitle("L.Y. left (ch40) (p.e.)");
-    scatterCTXZ->GetXaxis()->SetTitle("L.Y. center (ch41) (p.e.)");
-    scatterCTXZ->Fit("pol1", FitOption, "", MinPEScatterCTCenter, MaxPEScatterCTCenter);
-    scatterCTXZ->GetXaxis()->SetRangeUser(MinPEScatterCTCenter, MaxPEScatterCTCenter);
-    scatterCTXZ->GetYaxis()->SetRangeUser(MinPEScatterCTLeft, MaxPEScatterCTLeft);
-    scatterCTXZ->Draw("AP");
-
-    figName = TString::Format("%sCrossTalkScatterPlot_%04d_%04d.%s", ResultDir.c_str(), runnum, subrun, outputFileType.c_str());
-    canvas->SaveAs(figName);
-    canvas->Clear();
-
-
-
-
-
     // gap count
-    nHistHori = 2;
+    nHistHori = 1;
     nHistVert = 1;
     histWidth = 800;
     histHeight = 600;
     canvas = new TCanvas("canvas", "", histWidth * nHistHori, histHeight * nHistVert);
-    canvas->Divide(nHistHori, nHistVert);
+    // canvas->Divide(nHistHori, nHistVert);
 
-    hGapCount1s->GetXaxis()->SetRangeUser(0, totalEvt);
+    // hGapCount1s->GetXaxis()->SetRangeUser(0, totalEvt);
     hGapCount2s->GetXaxis()->SetRangeUser(0, totalEvt);
-    hGapCount1s->GetXaxis()->SetNdivisions(fileCount, kFALSE);
+    // hGapCount1s->GetXaxis()->SetNdivisions(fileCount, kFALSE);
     hGapCount2s->GetXaxis()->SetNdivisions(fileCount, kFALSE);
-    hGapCount1s->GetXaxis()->SetTickLength(1);
+    // hGapCount1s->GetXaxis()->SetTickLength(1);
     hGapCount2s->GetXaxis()->SetTickLength(1);
+    hGapCount2s->SetStats(kFALSE);
 
-    canvas->cd(1);
-    hGapCount1s->Draw("P");
-    canvas->cd(2);
+    // canvas->cd(1);
+    // hGapCount1s->Draw("P");
+    // canvas->cd(2);
     hGapCount2s->Draw("P");
     figName = TString::Format("%sGapCount_%04d_%04d-%04d_%04d.%s", ResultDir.c_str(), runnum, subrun, runnum + fileCount - 1, subrun, outputFileType.c_str());
     canvas->SaveAs(figName);
@@ -1379,16 +1308,16 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
 
 
 
-
-
-
     // hodoscope hit map
     nHistHori = 3;
     nHistVert = 1;
-    histWidth = 600;
+    histWidth = 640;
     histHeight = 600;
     canvas = new TCanvas("canvas", "", histWidth * nHistHori, histHeight * nHistVert);
     canvas->Divide(nHistHori, nHistVert);
+
+    gStyle->SetOptStat(1110);
+    const array<double, 4> HodomapStatBoxSize = { 0.65, 0.85, 0.75, 0.93 };
 
     canvas->cd(1);
     // hHodoHitMapUp->GetYaxis()->SetTitleSize(0.03);
@@ -1397,8 +1326,10 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
     // hHodoHitMapUp->GetXaxis()->SetLabelSize(0.04);
     hHodoHitMapUp->GetXaxis()->SetNdivisions(NScifiEachHodo);
     hHodoHitMapUp->GetYaxis()->SetNdivisions(NScifiEachHodo);
-    // hHodoHitMapUp->SetMarkerSize(2.0);
+    hHodoHitMapUp->GetZaxis()->SetTitleOffset(1.3);
     hHodoHitMapUp->Draw("text colz");
+    gPad->SetRightMargin(0.15);
+    changeStatsBoxSize(hHodoHitMapUp, HodomapStatBoxSize);
 
     canvas->cd(2);
     // hHodoHitMapDown->GetYaxis()->SetTitleSize(0.03);
@@ -1407,53 +1338,127 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
     // hHodoHitMapDown->GetXaxis()->SetLabelSize(0.04);
     hHodoHitMapDown->GetXaxis()->SetNdivisions(NScifiEachHodo);
     hHodoHitMapDown->GetYaxis()->SetNdivisions(NScifiEachHodo);
-    // hHodoHitMapDown->SetMarkerSize(2.0);
+    hHodoHitMapDown->GetZaxis()->SetTitleOffset(1.3);
     hHodoHitMapDown->Draw("text colz");
+    gPad->SetRightMargin(0.15);
+    changeStatsBoxSize(hHodoHitMapDown, HodomapStatBoxSize);
+
 
     canvas->cd(3);
     hHodoHitMapWithStraightBeam->GetXaxis()->SetNdivisions(NScifiEachHodo);
     hHodoHitMapWithStraightBeam->GetYaxis()->SetNdivisions(NScifiEachHodo);
+    hHodoHitMapWithStraightBeam->GetZaxis()->SetTitleOffset(1.3);
     hHodoHitMapWithStraightBeam->Draw("text colz");
+    gPad->SetRightMargin(0.15);
+    gPad->SetRightMargin(0.15);
+    changeStatsBoxSize(hHodoHitMapWithStraightBeam, HodomapStatBoxSize);
 
     figName = TString::Format("%sHodoHitMap_%04d_%04d.%s", ResultDir.c_str(), runnum, subrun, outputFileType.c_str());
     canvas->SaveAs(figName);
     canvas->Clear();
 
 
-    const Int_t NRGBs = 3;
-    const Int_t NCont = 255;
+    // 2D hist のカラーバーを赤色だけにする
+    // const Int_t NRGBs = 3;
+    // const Int_t NCont = 255;
+    //
+    // double stops[NRGBs] = { 0.00, .50, 1.00 };
+    // double red[NRGBs] = { 1.00, 1.0, 1.00 };
+    // double green[NRGBs] = { 1.00, 0.0, 0.00 };
+    // double blue[NRGBs] = { 1.00, 0.0, 0.00 };
+    // TColor::CreateGradientColorTable(2, stops, red, green, blue, NCont);
+    // gStyle->SetNumberContours(NCont);
 
-    double stops[NRGBs] = { 0.00, .50, 1.00 };
-    double red[NRGBs] = { 1.00, 1.0, 1.00 };
-    double green[NRGBs] = { 1.00, 0.0, 0.00 };
-    double blue[NRGBs] = { 1.00, 0.0, 0.00 };
-    TColor::CreateGradientColorTable(2, stops, red, green, blue, NCont);
-    gStyle->SetNumberContours(NCont);
-
-    // Beam hit position dependency of cross talk (Hodomap)
-    nHistHori = 2;
+    nHistHori = 1;
     nHistVert = 1;
-    histWidth = 1200;
-    histHeight = 1200;
     gStyle->SetPaintTextFormat("3.2f");
     canvas = new TCanvas("canvas", "", histWidth * nHistHori, histHeight * nHistVert);
-    canvas->Divide(nHistHori, nHistVert);
-    canvas->cd(1);
-    hCrossTalkXYDarkCutMap->Draw("text colz");
-    hCrossTalkXYDarkCutMap->GetXaxis()->SetNdivisions(NScifiEachHodo);
-    hCrossTalkXYDarkCutMap->GetYaxis()->SetNdivisions(NScifiEachHodo);
-    changestatsBoxSize(hCrossTalkXYDarkCutMap, 0.7, 0.9, 0.7, 0.935);
-    drawCubeLine("");
-    canvas->cd(2);
-    hCrossTalkXZDarkCutMap->Draw("text colz");
-    hCrossTalkXZDarkCutMap->GetXaxis()->SetNdivisions(NScifiEachHodo);
-    hCrossTalkXZDarkCutMap->GetYaxis()->SetNdivisions(NScifiEachHodo);
-    changestatsBoxSize(hCrossTalkXZDarkCutMap, 0.7, 0.9, 0.7, 0.935);
-    drawCubeLine("");
-
-    figName = TString::Format("%sCrossTalkDarkCutMap_%04d_%04d.%s", ResultDir.c_str(), runnum, subrun, outputFileType.c_str());
+    hPEProtoHodoMapMean->GetXaxis()->SetNdivisions(NScifiEachHodo);
+    hPEProtoHodoMapMean->GetYaxis()->SetNdivisions(NScifiEachHodo);
+    hPEProtoHodoMapMean->SetStats(kFALSE);
+    hPEProtoHodoMapMean->Draw("text colz");
+    gPad->SetRightMargin(0.15);
+    figName = TString::Format("%sScintiPEHodoMapMean_%04d_%04d.%s", ResultDir.c_str(), runnum, subrun, outputFileType.c_str());
     canvas->SaveAs(figName);
     canvas->Clear();
+
+
+
+
+    // Scintillator PE map
+    nHistHori = 1;
+    nHistVert = 1;
+    gStyle->SetPaintTextFormat("3.2f");
+    canvas = new TCanvas("canvas", "", histWidth * nHistHori, histHeight * nHistVert);
+    hPEProtoHodoMap->GetXaxis()->SetNdivisions(NScifiEachHodo);
+    hPEProtoHodoMap->GetYaxis()->SetNdivisions(NScifiEachHodo);
+    hPEProtoHodoMap->SetStats(kFALSE);
+    hPEProtoHodoMap->Draw("text colz");
+    gPad->SetRightMargin(0.15);
+    figName = TString::Format("%sScintiPEHodoMap_%04d_%04d.%s", ResultDir.c_str(), runnum, subrun, outputFileType.c_str());
+    canvas->SaveAs(figName);
+    canvas->Clear();
+
+
+    // Detection efficiency
+    nHistHori = 1;
+    nHistVert = 1;
+    gStyle->SetPaintTextFormat("3.2f");
+    canvas = new TCanvas("canvas", "", histWidth * nHistHori, histHeight * nHistVert);
+    for (int y = 0; y < NScifiEachHodo; y++)
+    {
+        for (int x = 0; x < NScifiEachHodo; x++)
+        {
+            if (countHodoHitEachCell[x][y] == 0)
+            {
+                hDetectionEff->SetBinContent(x + 1, y + 1, 0.0);
+            }
+            else
+            {
+                hDetectionEff->SetBinContent(x + 1, y + 1, (double) countScintiHodoHitEachCell[x][y] / (double) countHodoHitEachCell[x][y]);
+            }
+            #ifdef DEBUG
+                cout << TString::Format("(x,y)=(%2d,%2d): hodo&scinti/hodo = %d/%d", x, y, countScintiHodoHitEachCell[x][y], countHodoHitEachCell[x][y]) << endl;
+            #endif
+        }
+    }
+    hDetectionEff->GetXaxis()->SetNdivisions(NScifiEachHodo);
+    hDetectionEff->GetYaxis()->SetNdivisions(NScifiEachHodo);
+    hDetectionEff->SetStats(kFALSE);
+    hDetectionEff->Draw("text colz");
+    gPad->SetRightMargin(0.15);
+    figName = TString::Format("%sDetectionEfficiencyHodoMap_%04d_%04d.%s", ResultDir.c_str(), runnum, subrun, outputFileType.c_str());
+    canvas->SaveAs(figName);
+    canvas->Clear();
+
+
+
+
+
+    // Beam hit position dependency of cross talk (Hodomap)
+    // nHistHori = 2;
+    // nHistVert = 1;
+    // histWidth = 1200;
+    // histHeight = 1200;
+    // gStyle->SetPaintTextFormat("3.2f");
+    // canvas = new TCanvas("canvas", "", histWidth * nHistHori, histHeight * nHistVert);
+    // canvas->Divide(nHistHori, nHistVert);
+    // canvas->cd(1);
+    // hCrossTalkXYDarkCutMap->Draw("text colz");
+    // hCrossTalkXYDarkCutMap->GetXaxis()->SetNdivisions(NScifiEachHodo);
+    // hCrossTalkXYDarkCutMap->GetYaxis()->SetNdivisions(NScifiEachHodo);
+    // changestatsBoxSize(hCrossTalkXYDarkCutMap, 0.7, 0.9, 0.7, 0.935);
+    // drawCubeLine("");
+    // canvas->cd(2);
+    // hCrossTalkXZDarkCutMap->Draw("text colz");
+    // hCrossTalkXZDarkCutMap->GetXaxis()->SetNdivisions(NScifiEachHodo);
+    // hCrossTalkXZDarkCutMap->GetYaxis()->SetNdivisions(NScifiEachHodo);
+    // changestatsBoxSize(hCrossTalkXZDarkCutMap, 0.7, 0.9, 0.7, 0.935);
+    // drawCubeLine("");
+    //
+    // figName = TString::Format("%sCrossTalkDarkCutMap_%04d_%04d.%s", ResultDir.c_str(), runnum, subrun, outputFileType.c_str());
+    // canvas->SaveAs(figName);
+    // canvas->Clear();
 
     //
 }
@@ -1485,7 +1490,7 @@ int main(int argc, char** argv)
     }
 
     string fileType;
-    if(argc == 3+4+2+1)
+    if (argc == 3 + 4 + 2 + 1)
     {
         fileType = argv[9];
     }
@@ -1512,7 +1517,7 @@ int main(int argc, char** argv)
     {
         run_proto(runnum, fileCount, x1, y1, y2, x2, min_evt, max_evt);
     }
-    else if(argc == 3+4+2+1)
+    else if (argc == 3 + 4 + 2 + 1)
     {
         run_proto(runnum, fileCount, x1, y1, y2, x2, min_evt, max_evt, fileType);
     }
