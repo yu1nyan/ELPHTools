@@ -285,6 +285,8 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
     // constants
     gErrorIgnoreLevel = kError;
 
+    const double RightMarginForHodoMap = 0.15;
+
     double minPEEachCellFit = 2.5;
     double maxPEEachCellFit = 18.5;
 
@@ -1328,7 +1330,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
     hHodoHitMapUp->GetYaxis()->SetNdivisions(NScifiEachHodo);
     hHodoHitMapUp->GetZaxis()->SetTitleOffset(1.3);
     hHodoHitMapUp->Draw("text colz");
-    gPad->SetRightMargin(0.15);
+    gPad->SetRightMargin(RightMarginForHodoMap);
     changeStatsBoxSize(hHodoHitMapUp, HodomapStatBoxSize);
 
     canvas->cd(2);
@@ -1340,7 +1342,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
     hHodoHitMapDown->GetYaxis()->SetNdivisions(NScifiEachHodo);
     hHodoHitMapDown->GetZaxis()->SetTitleOffset(1.3);
     hHodoHitMapDown->Draw("text colz");
-    gPad->SetRightMargin(0.15);
+    gPad->SetRightMargin(RightMarginForHodoMap);
     changeStatsBoxSize(hHodoHitMapDown, HodomapStatBoxSize);
 
 
@@ -1349,8 +1351,8 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
     hHodoHitMapWithStraightBeam->GetYaxis()->SetNdivisions(NScifiEachHodo);
     hHodoHitMapWithStraightBeam->GetZaxis()->SetTitleOffset(1.3);
     hHodoHitMapWithStraightBeam->Draw("text colz");
-    gPad->SetRightMargin(0.15);
-    gPad->SetRightMargin(0.15);
+    gPad->SetRightMargin(RightMarginForHodoMap);
+    gPad->SetRightMargin(RightMarginForHodoMap);
     changeStatsBoxSize(hHodoHitMapWithStraightBeam, HodomapStatBoxSize);
 
     figName = TString::Format("%sHodoHitMap_%04d_%04d.%s", ResultDir.c_str(), runnum, subrun, outputFileType.c_str());
@@ -1377,7 +1379,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
     hPEProtoHodoMapMean->GetYaxis()->SetNdivisions(NScifiEachHodo);
     hPEProtoHodoMapMean->SetStats(kFALSE);
     hPEProtoHodoMapMean->Draw("text colz");
-    gPad->SetRightMargin(0.15);
+    gPad->SetRightMargin(RightMarginForHodoMap);
     figName = TString::Format("%sScintiPEHodoMapMean_%04d_%04d.%s", ResultDir.c_str(), runnum, subrun, outputFileType.c_str());
     canvas->SaveAs(figName);
     canvas->Clear();
@@ -1394,7 +1396,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
     hPEProtoHodoMap->GetYaxis()->SetNdivisions(NScifiEachHodo);
     hPEProtoHodoMap->SetStats(kFALSE);
     hPEProtoHodoMap->Draw("text colz");
-    gPad->SetRightMargin(0.15);
+    gPad->SetRightMargin(RightMarginForHodoMap);
     figName = TString::Format("%sScintiPEHodoMap_%04d_%04d.%s", ResultDir.c_str(), runnum, subrun, outputFileType.c_str());
     canvas->SaveAs(figName);
     canvas->Clear();
@@ -1426,7 +1428,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
     hDetectionEff->GetYaxis()->SetNdivisions(NScifiEachHodo);
     hDetectionEff->SetStats(kFALSE);
     hDetectionEff->Draw("text colz");
-    gPad->SetRightMargin(0.15);
+    gPad->SetRightMargin(RightMarginForHodoMap);
     figName = TString::Format("%sDetectionEfficiencyHodoMap_%04d_%04d.%s", ResultDir.c_str(), runnum, subrun, outputFileType.c_str());
     canvas->SaveAs(figName);
     canvas->Clear();
