@@ -42,10 +42,10 @@ void run_calib(string type, int nrun, int nsub, int file_count, int low, int hig
             case 3: toScintiCh = new ToScintiCh(EScintiType::OneCube); break;
             case 4: toScintiCh = new ToScintiCh(EScintiType::TwoCubes); break;
             case 5: toScintiCh = new ToScintiCh(EScintiType::NineCubes); break;
-            case 6: toScintiCh = new ToScintiCh(EScintiType::WRef3D); break;
+            case 6: toScintiCh = new ToScintiCh(EScintiType::Printed); break;
             default:
                 cerr << "Invalid sub run number!!" << endl;
-                toScintiCh = new ToScintiCh(EScintiType::WRef3D);
+                // toScintiCh = new ToScintiCh(EScintiType::Printed);
                 return;
         }
     }
