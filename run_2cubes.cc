@@ -632,6 +632,11 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
 
         TString pt2s_calibname = TString::Format("%s%s.tsv", calibfile_dir.c_str(), pt2sfile_calib.c_str());
         ifstream fin1(pt2s_calibname);
+        if(fin1.fail())
+        {
+            cerr << "Calibration file does not exist!!!" << endl;
+			return;
+        }
         while (fin1 >> inputCh >> mp >> sp >> cnp >> m1 >> s1 >> cn1 >> g)
         {
             mean_ped[0][inputCh] = mp;
@@ -683,8 +688,15 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
         tree3->Add(hsfile.c_str());
         tree3->SetBranchAddress("ADC", &adc[2]);
 
-        cout << "Protype+Hodoscope (Down): number of events = " << tree1->GetEntries() << endl;
-        cout << "Hodoscope (Up): number of events = " << tree2->GetEntries() << endl;
+        cout << "Protype (XY): number of events = " << tree1->GetEntries() << endl;
+        cout << "Protype (XZ & ZY): number of events = " << tree2->GetEntries() << endl;
+        cout << "Hodoscope: number of events = " << tree3->GetEntries() << endl;
+
+        if(tree1->GetEntries() == 0 || tree2->GetEntries() == 0 || tree3->GetEntries() == 0)
+		{
+			cerr << "ROOT file does not exist!!!" << endl;
+			return;
+		}
 
         cout << "Select X1:" << "[" << omit_lowx1 + 1 << ", " << 16 - omit_highx1 << "]" << endl;
         cout << "Select Y1:" << "[" << omit_lowy1 + 1 << ", " << 16 - omit_highy1 << "]" << endl;
