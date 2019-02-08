@@ -241,20 +241,19 @@ void drawCubeLine(string config)
 // キューブ種類・配置のオプションとrunnumの対応
 E3DOption decideOption(int runnum)
 {
-    // int one[] = {0,4,5,6,7,9,10,11,12,13,}
     if (runnum == 0 || (runnum >= 4 && runnum <= 7) || (runnum >= 9 && runnum <= 13))
         return E3DOption::WRef1cmV; // white refector
     if (runnum >= 14 && runnum <= 23)
         return E3DOption::WRef2cmV;
-    if (runnum == 24 || runnum >= 28 && runnum <= 36)
+    if (runnum == 24 || (runnum >= 28 && runnum <= 36))
         return E3DOption::WRef1cmP;
-    if (runnum >= 37 && runnum <= 43 || runnum >= 49 || runnum <= 51)
+    if ((runnum >= 37 && runnum <= 43) || (runnum >= 49 && runnum <= 51))
         return E3DOption::WRef2cmP;
     if (runnum >= 56 && runnum <= 58 || runnum >= 66 && runnum <= 68)
         return E3DOption::WRef1cmV; // silver ref.
     if (runnum >= 69 && runnum <= 74)
         return E3DOption::WRef1cmP;
-    if (runnum >= 76 && runnum <= 77 || runnum >= 81 && runnum <= 84)
+    if ((runnum >= 76 && runnum <= 77) || (runnum >= 81 && runnum <= 84))
         return E3DOption::WORef1cmV;
     if (runnum >= 85 && runnum <= 91)
         return E3DOption::WORef1cmP;
@@ -287,6 +286,8 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
 
     const double RightMarginForHodoMap = 0.15;
 
+    int fitRangeLower = 5;
+    int fitRangeHigher = 5;
     double minPEEachCellFit = 2.5;
     double maxPEEachCellFit = 18.5;
 
@@ -702,6 +703,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
         tree3->Add(hsfile.c_str());
         tree3->SetBranchAddress("ADC", &adc[2]);
 
+        cout << TString::Format("runnum = %04d", j) << endl;
         cout << "Protype: number of events = " << tree1->GetEntries() << endl;
         cout << "Hodoscope : number of events = " << tree3->GetEntries() << endl;
 
@@ -729,26 +731,32 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
         if (cubePlaceOption == E3DOption::None)
             return;
 
-        if (cubePlaceOption == E3DOption::WRef2cmP)
+        else if (cubePlaceOption == E3DOption::WRef2cmP)
         {
             minPEEachCellFit = 15.0;
             maxPEEachCellFit = 35.0;
         }
-        if (cubePlaceOption == E3DOption::WRef1cmV)
+        else if (cubePlaceOption == E3DOption::WRef1cmV)
         {
             minPEEachCellFit = 3.5;
             maxPEEachCellFit = 17.5;
         }
-        if (cubePlaceOption == E3DOption::WRef2cmV)
+        else if (cubePlaceOption == E3DOption::WRef2cmV)
         {
             minPEEachCellFit = 9.14 - 4.285;
             maxPEEachCellFit = 9.14 + 9.715;
         }
-        if (cubePlaceOption == E3DOption::WRef1cmP)
+        else if (cubePlaceOption == E3DOption::WRef1cmP)
         {
             minPEEachCellFit = 8.625 - 4.285;
             maxPEEachCellFit = 8.625 + 9.715;
         }
+        if (cubePlaceOption == E3DOption::WORef1cmP || cubePlaceOption == E3DOption::WORef1cmV)
+        {
+            fitRangeLower = 2;
+            fitRangeHigher = 3;
+        }
+
 
 
         #ifdef DEBUG
@@ -759,6 +767,18 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
                     break;
                 case E3DOption::WRef1cmV:
                     cout << "WRef1cmV" << endl;
+                    break;
+                case E3DOption::WRef2cmP:
+                    cout << "WRef2cmP" << endl;
+                    break;
+                case E3DOption::WRef2cmV:
+                    cout << "WRef2cmV" << endl;
+                    break;
+                case E3DOption::WORef1cmP:
+                    cout << "WORef1cmP" << endl;
+                    break;
+                case E3DOption::WORef1cmV:
+                    cout << "WORef1cmV" << endl;
                     break;
                 default:
                     break;
@@ -1052,7 +1072,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
         }
     }
 
-    cout << endl << "--------------event loop end--------------" << endl;
+    cout << "--------------event loop end--------------" << endl;
     cout << "total event: " << totalEvt << endl;
     cout << "good event: " << countGood << endl;
     cout << "single hit event: " << countSingle << endl;
@@ -1163,6 +1183,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
     canvas = new TCanvas();
     hPEProtoGood->Draw();
     hPEProtoGood->Write();
+    int maximumBin = hPEProtoGood->GetMaximumBin();
     figName = TString::Format("%sPEProtoGood_%04d_%04d.%s", ResultDir.c_str(), runnum, subrun, outputFileType.c_str());
     canvas->SaveAs(figName);
     histScintiPEGood.Close();
@@ -1178,7 +1199,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
     {
         for (int x = 0; x < NScifiEachHodo; x++)
         {
-            hPEProtoGoodCell[x][y]->Fit("landau", FitOption, "", minPEEachCellFit, maxPEEachCellFit);
+            hPEProtoGoodCell[x][y]->Fit("landau", FitOption, "", maximumBin - fitRangeLower, maximumBin + fitRangeHigher);
             TF1* lan = (TF1 *) gROOT->FindObject("landau");
             double mean = hPEProtoGoodCell[x][y]->GetMean();
             double mpv = lan->GetParameter("MPV");
@@ -1210,7 +1231,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
     if (isVertical(decideOption(runnum)))
     {
         array<int, 2> rangeHSXForEachY;
-        const array<int, 2> RangeHSYForEachY = { 7, 11 };
+        array<int, 2> rangeHSYForEachY = { 7, 11 };
         if (is1cmArea(decideOption(runnum)))
         {
             rangeHSXForEachY = { 5, 11 };
@@ -1219,13 +1240,17 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
         {
             rangeHSXForEachY = { 3, 14 };
         }
+        if ((runnum >= 56 && runnum <= 68) || (runnum >= 76 && runnum <= 84))
+        {
+            rangeHSYForEachY = { 6, 10 };
+        }
 
         TFile histsScintiPEEachY(TString::Format("%sPEEachY_%04d_%04d.root", CellPEDir.c_str(), runnum, subrun), "RECREATE");
         TH1D* hPEProtoGoodY[NScifiEachHodo];
         TGraphErrors* distanceToFiberVsLY = new TGraphErrors();
 
         canvas = new TCanvas();
-        for (int y = RangeHSYForEachY[0] - 1; y < RangeHSYForEachY[1]; y++)
+        for (int y = rangeHSYForEachY[0] - 1; y < rangeHSYForEachY[1]; y++)
         {
             histName = "hPEEachY_ZY_Y" + to_string(y + 1);
             histAxis = "PE ZY Y = " + to_string(y + 1) + ";Light yield (p.e.);Number of events";
@@ -1235,13 +1260,14 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
             {
                 hPEProtoGoodY[y]->Add(hPEProtoGoodCell[x][y], 1);
             }
-            hPEProtoGoodY[y]->Fit("landau", FitOption, "", minPEEachCellFit+(y-RangeHSYForEachY[0]+1)*0.48, maxPEEachCellFit+(y-RangeHSYForEachY[0]+1)*0.48-5);
+            // hPEProtoGoodY[y]->Fit("landau", FitOption, "", minPEEachCellFit + (y - rangeHSYForEachY[0] + 1) * 0.48, maxPEEachCellFit + (y - rangeHSYForEachY[0] + 1) * 0.48 - 5);
+            hPEProtoGoodY[y]->Fit("landau", FitOption, "", maximumBin - fitRangeLower, maximumBin + fitRangeHigher);
             TF1* lan = (TF1 *) gROOT->FindObject("landau");
             double mpv = lan->GetParameter(1);
-            distanceToFiberVsLY->SetPoint(y - RangeHSYForEachY[0] + 1, (RangeHSYForEachY[1] - y - 1) * HodoWidth, mpv);
-            distanceToFiberVsLY->SetPointError(y - RangeHSYForEachY[0] + 1, HodoWidth / 2, lan->GetParError(1));
+            distanceToFiberVsLY->SetPoint(y - rangeHSYForEachY[0] + 1, (rangeHSYForEachY[1] - y - 1) * HodoWidth, mpv);
+            distanceToFiberVsLY->SetPointError(y - rangeHSYForEachY[0] + 1, HodoWidth / 2, lan->GetParError(1));
             #ifdef DEBUG
-                cout << (RangeHSYForEachY[1] - y - 1) << endl;
+                cout << (rangeHSYForEachY[1] - y - 1) << endl;
             #endif
             canvas = new TCanvas();
             hPEProtoGoodY[y]->Draw();
@@ -1258,8 +1284,11 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
         distanceToFiberVsLY->GetYaxis()->SetTitle("Light yield (p.e.)");
         // distanceToFiberVsLY->Fit("pol1", FitOption, "", -0.5, HodoWidth * 5 + 0.5);
         TF1* myPol1 = new TF1("mypol1", "[0]+[1]*x", -0.5, HodoWidth * 5 + 0.5);
+        TF1* myExp1 = new TF1("myExp1", "[0]*TMath::Exp(-x/[1])", -0.5, HodoWidth * 5 + 0.5);
         myPol1->SetParameters(8.5, -0.5);
-        distanceToFiberVsLY->Fit("mypol1", FitOption, "", -0.5, HodoWidth * 5 + 0.5);
+        myExp1->SetParameters(10.0, 12.0);
+        // distanceToFiberVsLY->Fit("mypol1", FitOption, "", -0.5, HodoWidth * 5 + 0.5);
+        distanceToFiberVsLY->Fit("myExp1", FitOption, "", -0.5, HodoWidth * 5 + 0.5);
         distanceToFiberVsLY->GetXaxis()->SetRangeUser(-0.5, HodoWidth * 5 + 0.5);
         distanceToFiberVsLY->Draw("AP");
         distanceToFiberVsLY->Write();
@@ -1268,6 +1297,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
         graphDisVsLY.Close();
         canvas->Clear();
     }
+
 
 
 
@@ -1462,7 +1492,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
     // canvas->SaveAs(figName);
     // canvas->Clear();
 
-    //
+    cout << endl;
 }
 
 int main(int argc, char** argv)
@@ -1477,25 +1507,29 @@ int main(int argc, char** argv)
     int runnum = atoi(argv[1]);
     int fileCount = atoi(argv[2]);
     int x1, y1, y2, x2;
-    if (argc == 3 + 4)
+    int min_evt, max_evt;
+    string fileType;
+    if (argc >= 3 + 4)
     {
         x1 = atoi(argv[3]);
         y1 = atoi(argv[4]);
         y2 = atoi(argv[5]);
         x2 = atoi(argv[6]);
-    }
-    int min_evt, max_evt;
-    if (argc == 3 + 4 + 2)
-    {
-        min_evt = atoi(argv[7]);
-        max_evt = atoi(argv[8]);
+        if (argc >= 3 + 4 + 2)
+        {
+            min_evt = atoi(argv[7]);
+            max_evt = atoi(argv[8]);
+            if (argc >= 3 + 4 + 2 + 1)
+            {
+                fileType = argv[9];
+            }
+        }
     }
 
-    string fileType;
-    if (argc == 3 + 4 + 2 + 1)
-    {
-        fileType = argv[9];
-    }
+
+
+
+
 
     // int gap_point_0 = atoi(argv[5]);
     // int gap_pt2s_0  = atoi(argv[6]);
