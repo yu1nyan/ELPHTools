@@ -1290,6 +1290,14 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
         // distanceToFiberVsLY->Fit("mypol1", FitOption, "", -0.5, HodoWidth * 5 + 0.5);
         distanceToFiberVsLY->Fit("myExp1", FitOption, "", -0.5, HodoWidth * 5 + 0.5);
         distanceToFiberVsLY->GetXaxis()->SetRangeUser(-0.5, HodoWidth * 5 + 0.5);
+        if(runnum <= 74)
+        {
+            distanceToFiberVsLY->GetYaxis()->SetRangeUser(5, 14);
+        }
+        else
+        {
+            distanceToFiberVsLY->GetYaxis()->SetRangeUser(1, 10);
+        }
         distanceToFiberVsLY->Draw("AP");
         distanceToFiberVsLY->Write();
         figName = TString::Format("%sDistanceToFiberVsLY_%04d_%04d.%s", ResultDir.c_str(), runnum, subrun, outputFileType.c_str());
