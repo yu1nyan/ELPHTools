@@ -464,11 +464,11 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
     const double MaxPEProto = 99.5;
     const int NBinPEProto = 100;
     histName = "hPEZY";
-    histAxis = "PE ZY;Light yield (p.e.);Number of events";
+    histAxis = "L.Y. with all events (X readout);Light yield (p.e.);Number of events";
     hPEProto = new TH1D(histName.c_str(), histAxis.c_str(), NBinPEProto, MinPEProto, MaxPEProto);
     // hPEProto = new TH1D(histName.c_str(), histAxis.c_str(), 100, -0.5, 9.5);
     histName += "Good";
-    histAxis = "PE ZY good;Light yield (p.e.);Number of events";
+    histAxis = "L.Y. with good events (X readout);Light yield (p.e.);Number of events";
     hPEProtoGood = new TH1D(histName.c_str(), histAxis.c_str(), NBinPEProto, MinPEProto, MaxPEProto);
 
     TH1D* hPEProtoGoodCell[NScifiEachHodo][NScifiEachHodo];
@@ -477,15 +477,16 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
         for (int x = 0; x < NScifiEachHodo; x++)
         {
             histName = "hPECellZY_X" + to_string(x + 1) + "Y" + to_string(y + 1) + "";
-            histAxis = "PE ZY Cell (X,Y) = (" + to_string(x + 1) + "," + to_string(y + 1) + ");Light yield (p.e.);Number of events";
+            histAxis = "L.Y. ZY Cell (X,Y) = (" + to_string(x + 1) + "," + to_string(y + 1) + ");Light yield (p.e.);Number of events";
             hPEProtoGoodCell[x][y] = new TH1D(histName.c_str(), histAxis.c_str(), NBinPEProto, MinPEProto, MaxPEProto);
         }
     }
 
-    TH2D* hPEProtoHodoMap = new TH2D("hPEProtoHodoMap", "Scintillator PE map;cell # along X;cell # along Y; Light yield (p.e.)", NScifiEachHodo, MinHodoMap, MaxHodoMap, NScifiEachHodo, MinHodoMap, MaxHodoMap);
+    TH2D* hPEProtoHodoMap = new TH2D("hPEProtoHodoMap", "L.Y. of scintillator (using landau MPV);cell # along X;cell # along Y; Light yield (p.e.)", NScifiEachHodo, MinHodoMap, MaxHodoMap, NScifiEachHodo, MinHodoMap, MaxHodoMap);
     hPEProtoHodoMap->SetMinimum(0);
     // hPEProtoHodoMap->SetMaximum(MaxPEProto+0.5);
-    TH2D* hPEProtoHodoMapMean = new TH2D("hPEProtoHodoMapMean", "Scintillator PE map (using mean);cell # along X;cell # along Y; Light yield (p.e.)", NScifiEachHodo, MinHodoMap, MaxHodoMap, NScifiEachHodo, MinHodoMap, MaxHodoMap);
+    TH2D* hPEProtoHodoMapMean = new TH2D("hPEProtoHodoMapMean", "L.Y. of scintillator (using mean);cell # along X;cell # along Y; Light yield (p.e.)", NScifiEachHodo, MinHodoMap, MaxHodoMap, NScifiEachHodo, MinHodoMap, MaxHodoMap);
+    TH2D* hPEProtoHodoMapMeanZoom = new TH2D("hPEProtoHodoMapMeanZoom", "L.Y. of scintillator (using mean);cell # along X;cell # along Y; Light yield (p.e.)", HodoMapZoomedSize1cm, HodoMapCenter-HodoMapZoomedSize1cm/2, HodoMapCenter+HodoMapZoomedSize1cm/2, HodoMapZoomedSize1cm, HodoMapCenter-HodoMapZoomedSize1cm/2, HodoMapCenter+HodoMapZoomedSize1cm/2);
 
     TH2D* hDetectionEff = new TH2D("hDetectionEff", "Detection efficiency;cell # along X;cell # along Y; Detection efficiency", NScifiEachHodo, MinHodoMap, MaxHodoMap, NScifiEachHodo, MinHodoMap, MaxHodoMap);
     TH2D* hDetectionEffZoom = new TH2D("hDetectionEffZoom", "Detection efficiency;cell # along X;cell # along Y; Detection efficiency", HodoMapZoomedSize1cm, HodoMapCenter-HodoMapZoomedSize1cm/2, HodoMapCenter+HodoMapZoomedSize1cm/2, HodoMapZoomedSize1cm, HodoMapCenter-HodoMapZoomedSize1cm/2, HodoMapCenter+HodoMapZoomedSize1cm/2);
@@ -1224,6 +1225,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
                 hPEProtoHodoMap->SetBinContent(x + 1, y + 1, mpv);
             }
             hPEProtoHodoMapMean->SetBinContent(x + 1, y + 1, mean);
+            hPEProtoHodoMapMeanZoom->SetBinContent(x + 1 - (NScifiEachHodo - HodoMapZoomedSize1cm)/2.0, y + 1 - (NScifiEachHodo - HodoMapZoomedSize1cm)/2.0, mean);
             hPEProtoGoodCell[x][y]->Draw();
             hPEProtoGoodCell[x][y]->Write();
             figName = TString::Format("%sPECellXY=(%d,%d)_%04d_%04d.%s", CellPEDir.c_str(), x + 1, y + 1, runnum, subrun, outputFileType.c_str());
@@ -1417,6 +1419,8 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
     // TColor::CreateGradientColorTable(2, stops, red, green, blue, NCont);
     // gStyle->SetNumberContours(NCont);
 
+
+// Scintillator PE map
     nHistHori = 1;
     nHistVert = 1;
     gStyle->SetPaintTextFormat("3.2f");
@@ -1430,13 +1434,20 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
     canvas->SaveAs(figName);
     canvas->Clear();
 
+    const double MarkerSizeHodoMapZoom = 1.8;
+
+    canvas = new TCanvas("canvas", "", histWidth * nHistHori, histHeight * nHistVert);
+    hPEProtoHodoMapMeanZoom->GetXaxis()->SetNdivisions(HodoMapZoomedSize1cm);
+    hPEProtoHodoMapMeanZoom->GetYaxis()->SetNdivisions(HodoMapZoomedSize1cm);
+    hPEProtoHodoMapMeanZoom->SetStats(kFALSE);
+    hPEProtoHodoMapMeanZoom->SetMarkerSize(MarkerSizeHodoMapZoom);
+    hPEProtoHodoMapMeanZoom->Draw("text colz");
+    gPad->SetRightMargin(RightMarginForHodoMap);
+    figName = TString::Format("%sScintiPEHodoMapMeanZoom_%04d_%04d.%s", ResultDir.c_str(), runnum, subrun, outputFileType.c_str());
+    canvas->SaveAs(figName);
+    canvas->Clear();
 
 
-
-    // Scintillator PE map
-    // nHistHori = 1;
-    // nHistVert = 1;
-    // gStyle->SetPaintTextFormat("3.2f");
     canvas = new TCanvas("canvas", "", histWidth * nHistHori, histHeight * nHistVert);
     hPEProtoHodoMap->GetXaxis()->SetNdivisions(NScifiEachHodo);
     hPEProtoHodoMap->GetYaxis()->SetNdivisions(NScifiEachHodo);
@@ -1464,8 +1475,9 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
             }
             else
             {
-                hDetectionEff->SetBinContent(x + 1, y + 1, (double) countScintiHodoHitEachCell[x][y] / (double) countHodoHitEachCell[x][y]);
-                hDetectionEffZoom->SetBinContent(x + 1 - (NScifiEachHodo - HodoMapZoomedSize1cm)/2.0, y + 1 - (NScifiEachHodo - HodoMapZoomedSize1cm)/2.0, (double) countScintiHodoHitEachCell[x][y] / (double) countHodoHitEachCell[x][y]);
+                double de = (double)countScintiHodoHitEachCell[x][y] / (double) countHodoHitEachCell[x][y];
+                hDetectionEff->SetBinContent(x + 1, y + 1, de);
+                hDetectionEffZoom->SetBinContent(x + 1 - (NScifiEachHodo - HodoMapZoomedSize1cm)/2.0, y + 1 - (NScifiEachHodo - HodoMapZoomedSize1cm)/2.0, de);
             }
             #ifdef DEBUG
                 cout << TString::Format("(x,y)=(%2d,%2d): hodo&scinti/hodo = %d/%d", x, y, countScintiHodoHitEachCell[x][y], countHodoHitEachCell[x][y]) << endl;
@@ -1485,7 +1497,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
     hDetectionEffZoom->GetXaxis()->SetNdivisions(HodoMapZoomedSize1cm);
     hDetectionEffZoom->GetYaxis()->SetNdivisions(HodoMapZoomedSize1cm);
     hDetectionEffZoom->SetStats(kFALSE);
-    hDetectionEffZoom->SetMarkerSize(1.8);
+    hDetectionEffZoom->SetMarkerSize(MarkerSizeHodoMapZoom);
     hDetectionEffZoom->Draw("text colz");
     gPad->SetRightMargin(RightMarginForHodoMap);
     figName = TString::Format("%sDetectionEfficiencyHodoMapZoom_%04d_%04d.%s", ResultDir.c_str(), runnum, subrun, outputFileType.c_str());
