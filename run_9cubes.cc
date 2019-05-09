@@ -296,7 +296,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
     // directory settings
     const string rootfile_dir = "../tree_root/";
     const string calibfile_dir = "calibfile/";
-    string resultDirTemp = "2cubes/";
+    string resultDirTemp = "9cubes/";
     mkdir(resultDirTemp.c_str(), 0777);
 
     time_t rawTime = time(nullptr);

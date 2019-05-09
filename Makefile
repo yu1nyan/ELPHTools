@@ -55,7 +55,7 @@ run_1cube: $(OBJDIR)/run_1cube.o
 run_2cubes: $(OBJDIR)/run_2cubes.o $(OBJDIR)/ToScintiCh.o
 	$(LD) -o $@ $^ $(LDFLAGS)
 
-run_9cubes: $(OBJDIR)/run_9cubes.o
+run_9cubes: $(OBJDIR)/run_9cubes.o $(OBJDIR)/ToScintiCh.o
 	$(LD) -o $@ $^ $(LDFLAGS)
 
 run_3Dprint: $(OBJDIR)/run_3Dprint.o $(OBJDIR)/ToScintiCh.o
