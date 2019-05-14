@@ -1372,6 +1372,8 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
     hGapCount2s->GetXaxis()->SetNdivisions(fileCount, kFALSE);
     hGapCount1s->GetXaxis()->SetTickLength(1);
     hGapCount2s->GetXaxis()->SetTickLength(1);
+    hGapCount1s->SetStats(kFALSE);
+    hGapCount2s->SetStats(kFALSE);
 
     canvas->cd(1);
     hGapCount1s->Draw("P");
