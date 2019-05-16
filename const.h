@@ -38,6 +38,7 @@ const int NEasirocForScinti = 2;
 const int NChEasiroc = 64;
 const int NChEasirocHalf = 32;
 const int NSurfaceScinti = 3;
+const int NScintiOneSide = 5;
 
 const double HodoWidth = 1.7;   // (mm)
 

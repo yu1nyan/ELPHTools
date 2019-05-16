@@ -65,6 +65,61 @@ tuple<EHodoscope, int> ToHodoscopeCh(int easirocCh, int shiftXup=0, int shiftYup
     return forward_as_tuple(EHodoscope::None, 0);
 }
 
+void drawEventDisplay(TH2D** hHodo, TH2D** hProto, int runnum, int subrun, int totalEvt, string evtDisplayDir, string outputFileType)
+{
+    const int NHistHori = 4;
+    const int NHistVert = 2;
+    const int HistWidth = 800;
+    const int HistHeight = 600;
+    TCanvas* canvas = new TCanvas("canvas", "", HistWidth * NHistHori, HistHeight * NHistVert);
+    canvas->Divide(NHistHori, NHistVert);
+
+    gStyle->SetOptStat(0);
+    gStyle->SetPaintTextFormat("3.2f");
+
+    const int HodoHistOrder[] = { 5, 1, 4, 8 };
+    const double TitleSize = 0.03;
+    const double LabelSize = 0.04;
+    const double MarkerSize = 2.0;
+    for (int i = 0; i < NHodo; i++)
+    {
+        canvas->cd(HodoHistOrder[i]);
+        if (HodoName[i] == "HSX1" || HodoName[i] == "HSX2")
+        {
+            hHodo[i]->Draw("text60 colz");
+            hHodo[i]->GetXaxis()->SetNdivisions(NScifiEachHodo);
+            hHodo[i]->GetYaxis()->SetNdivisions(0);
+        }
+        else
+        {
+            hHodo[i]->GetXaxis()->SetNdivisions(0);
+            hHodo[i]->GetYaxis()->SetNdivisions(NScifiEachHodo);
+            hHodo[i]->Draw("text colz");
+        }
+        hHodo[i]->GetYaxis()->SetTitleSize(TitleSize);
+        hHodo[i]->GetXaxis()->SetTitleSize(TitleSize);
+        hHodo[i]->GetYaxis()->SetLabelSize(LabelSize);
+        hHodo[i]->GetXaxis()->SetLabelSize(LabelSize);
+        hHodo[i]->SetMarkerSize(MarkerSize);
+    }
+    const int ProtoHistOrder[] = { 3, 2, 7 };
+    for (int i = 0; i < NSurfaceScinti; i++)
+    {
+        canvas->cd(ProtoHistOrder[i]);
+        hProto[i]->GetYaxis()->SetTitleSize(TitleSize);
+        hProto[i]->GetXaxis()->SetTitleSize(TitleSize);
+        hProto[i]->GetYaxis()->SetLabelSize(LabelSize);
+        hProto[i]->GetXaxis()->SetLabelSize(LabelSize);
+        hProto[i]->GetXaxis()->SetNdivisions(NScintiOneSide);
+        hProto[i]->GetYaxis()->SetNdivisions(NScintiOneSide);
+        hProto[i]->SetMarkerSize(MarkerSize);
+        hProto[i]->Draw("text colz");
+    }
+    TString figName = TString::Format("%shit_%04d_%04d_evt%d.%s", evtDisplayDir.c_str(), runnum, subrun, totalEvt, outputFileType.c_str());
+    canvas->SaveAs(figName);
+    canvas->Clear();
+}
+
 bool isGap(int hodoX, int hodoY, int protoX, int shiftX=0, int shiftY=0)
 {
     if (protoX == 3 && !(hodoX + shiftX >= 6 && hodoX + shiftX <= 11 && hodoY + shiftY >= 6 && hodoY + shiftY <= 11))
@@ -140,40 +195,20 @@ void drawCubeLine(string config)
     double yShift = 0;
 
 
-    if (config == "ex1")
+    if (config == "non-welding")
     {
-        xShift = -0.2;
-        yShift =  0.1;
+        xShift = -0.5;
+        yShift =  0;
     }
-    else if (config == "ex2")
+    else if (config == "100u")
     {
-        xShift = -0.3;
-        yShift =  0.3;
+        xShift = -0.5;
+        yShift =  0;
     }
-    else if (config == "in1")
+    else if (config == "200u")
     {
-        xShift =  0.;
-        yShift =  0.3;
-    }
-    else if (config == "ex_w1H")
-    {
-        xShift = -0.2;
-        yShift =  0.2;
-    }
-    else if (config == "ex_w2H")
-    {
-        xShift = -0.7;
-        yShift =  0.35;
-    }
-    else if (config == "ex_w1V")
-    {
-        xShift = -0.2;
-        yShift = 0.1;
-    }
-    else if (config == "ex_w2V")
-    {
-        xShift = -0.6;
-        yShift =  0.45;
+        xShift =  -0.5;
+        yShift =  0;
     }
 
 
@@ -367,7 +402,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
     }
 
     TH2D* hProto[NSurfaceScinti];
-    const Int_t NScintiOneSide = 5;
+
     const double MinProtoMap = 0.5;
     const double MaxProtoMap = 5.5;
     const double MaxPEProto2D = 50.;
@@ -497,8 +532,8 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
 
 
     // Cross talk related
-    const int NBinCT = 100;
-    const double MinCT = 0;
+    const int NBinCT = 110;
+    const double MinCT = -0.1;
     const double MaxCT = 1.0;
     TH1D* hCrossTalkXZ = new TH1D("hCrossTalkXZ", "L.Y. ratio left/center (using Y readout);L.Y. left(ch40)/center(ch41);Number of events", NBinCT, MinCT, MaxCT);
     TH1D* hCrossTalkXY = new TH1D("hCrossTalkXY", "L.Y. ratio left/center (using Z readout);L.Y. left(ch8)/center(ch9);Number of events", NBinCT, MinCT, MaxCT);
@@ -996,10 +1031,13 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
             if (isGap(maxChHodo[static_cast<int> (EHodoscope::HSX2)], maxChHodo[static_cast<int> (EHodoscope::HSY2)], maxChProtoXOfXY, shiftHSX2, shiftHSY2))
             {
                 gapCount1s++;
+                // drawEventDisplay(hHodo, hProto, runnum, subrun, totalEvt, EvtDisplayDir, outputFileType);
+                // cout << "evt: " << totalEvt << ", " << maxChProtoXOfXY << ", [" << maxChHodo[static_cast<int> (EHodoscope::HSX2)] + shiftHSX2 << ", " << maxChHodo[static_cast<int> (EHodoscope::HSY2)] + shiftHSY2 << "]" << endl;
             }
             if (isGap(maxChHodo[static_cast<int> (EHodoscope::HSX2)], maxChHodo[static_cast<int> (EHodoscope::HSY2)], maxChProtoXOfXZ, shiftHSX2, shiftHSY2))
             {
                 gapCount2s++;
+                // drawEventDisplay(hHodo, hProto, runnum, subrun, totalEvt, EvtDisplayDir + "gap2s/", outputFileType);
             }
             hGapCount1s->SetBinContent(totalEvt, gapCount1s);
             hGapCount2s->SetBinContent(totalEvt, gapCount2s);
@@ -1009,57 +1047,58 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
             // if (evt >= min_evt && evt <= max_evt && runnum == j && goodEvent && scintiHit)
             if (totalEvt >= min_evt && totalEvt <= max_evt && goodEventForCTCell)
             {
-                const int NHistHori = 4;
-                const int NHistVert = 2;
-                const int HistWidth = 800;
-                const int HistHeight = 600;
-                canvas = new TCanvas("canvas", "", HistWidth * NHistHori, HistHeight * NHistVert);
-                canvas->Divide(NHistHori, NHistVert);
-
-                gStyle->SetOptStat(0);
-                gStyle->SetPaintTextFormat("3.2f");
-
-                const int HodoHistOrder[] = { 5, 1, 4, 8 };
-                const double TitleSize = 0.03;
-                const double LabelSize = 0.04;
-                const double MarkerSize = 2.0;
-                for (int i = 0; i < NHodo; i++)
-                {
-                    canvas->cd(HodoHistOrder[i]);
-                    if (HodoName[i] == "HSX1" || HodoName[i] == "HSX2")
-                    {
-                        hHodo[i]->Draw("text60 colz");
-                        hHodo[i]->GetXaxis()->SetNdivisions(NScifiEachHodo);
-                        hHodo[i]->GetYaxis()->SetNdivisions(0);
-                    }
-                    else
-                    {
-                        hHodo[i]->GetXaxis()->SetNdivisions(0);
-                        hHodo[i]->GetYaxis()->SetNdivisions(NScifiEachHodo);
-                        hHodo[i]->Draw("text colz");
-                    }
-                    hHodo[i]->GetYaxis()->SetTitleSize(TitleSize);
-                    hHodo[i]->GetXaxis()->SetTitleSize(TitleSize);
-                    hHodo[i]->GetYaxis()->SetLabelSize(LabelSize);
-                    hHodo[i]->GetXaxis()->SetLabelSize(LabelSize);
-                    hHodo[i]->SetMarkerSize(MarkerSize);
-                }
-                const int ProtoHistOrder[] = { 3, 2, 7 };
-                for (int i = 0; i < NSurfaceScinti; i++)
-                {
-                    canvas->cd(ProtoHistOrder[i]);
-                    hProto[i]->GetYaxis()->SetTitleSize(TitleSize);
-                    hProto[i]->GetXaxis()->SetTitleSize(TitleSize);
-                    hProto[i]->GetYaxis()->SetLabelSize(LabelSize);
-                    hProto[i]->GetXaxis()->SetLabelSize(LabelSize);
-                    hProto[i]->GetXaxis()->SetNdivisions(NScintiOneSide);
-                    hProto[i]->GetYaxis()->SetNdivisions(NScintiOneSide);
-                    hProto[i]->SetMarkerSize(MarkerSize);
-                    hProto[i]->Draw("text colz");
-                }
-                figName = TString::Format("%shit_%04d_%04d_evt%d.%s", EvtDisplayDir.c_str(), runnum, subrun, totalEvt, outputFileType.c_str());
-                canvas->SaveAs(figName);
-                canvas->Clear();
+                drawEventDisplay(hHodo, hProto, runnum, subrun, totalEvt, EvtDisplayDir, outputFileType);
+                // const int NHistHori = 4;
+                // const int NHistVert = 2;
+                // const int HistWidth = 800;
+                // const int HistHeight = 600;
+                // canvas = new TCanvas("canvas", "", HistWidth * NHistHori, HistHeight * NHistVert);
+                // canvas->Divide(NHistHori, NHistVert);
+                //
+                // gStyle->SetOptStat(0);
+                // gStyle->SetPaintTextFormat("3.2f");
+                //
+                // const int HodoHistOrder[] = { 5, 1, 4, 8 };
+                // const double TitleSize = 0.03;
+                // const double LabelSize = 0.04;
+                // const double MarkerSize = 2.0;
+                // for (int i = 0; i < NHodo; i++)
+                // {
+                //     canvas->cd(HodoHistOrder[i]);
+                //     if (HodoName[i] == "HSX1" || HodoName[i] == "HSX2")
+                //     {
+                //         hHodo[i]->Draw("text60 colz");
+                //         hHodo[i]->GetXaxis()->SetNdivisions(NScifiEachHodo);
+                //         hHodo[i]->GetYaxis()->SetNdivisions(0);
+                //     }
+                //     else
+                //     {
+                //         hHodo[i]->GetXaxis()->SetNdivisions(0);
+                //         hHodo[i]->GetYaxis()->SetNdivisions(NScifiEachHodo);
+                //         hHodo[i]->Draw("text colz");
+                //     }
+                //     hHodo[i]->GetYaxis()->SetTitleSize(TitleSize);
+                //     hHodo[i]->GetXaxis()->SetTitleSize(TitleSize);
+                //     hHodo[i]->GetYaxis()->SetLabelSize(LabelSize);
+                //     hHodo[i]->GetXaxis()->SetLabelSize(LabelSize);
+                //     hHodo[i]->SetMarkerSize(MarkerSize);
+                // }
+                // const int ProtoHistOrder[] = { 3, 2, 7 };
+                // for (int i = 0; i < NSurfaceScinti; i++)
+                // {
+                //     canvas->cd(ProtoHistOrder[i]);
+                //     hProto[i]->GetYaxis()->SetTitleSize(TitleSize);
+                //     hProto[i]->GetXaxis()->SetTitleSize(TitleSize);
+                //     hProto[i]->GetYaxis()->SetLabelSize(LabelSize);
+                //     hProto[i]->GetXaxis()->SetLabelSize(LabelSize);
+                //     hProto[i]->GetXaxis()->SetNdivisions(NScintiOneSide);
+                //     hProto[i]->GetYaxis()->SetNdivisions(NScintiOneSide);
+                //     hProto[i]->SetMarkerSize(MarkerSize);
+                //     hProto[i]->Draw("text colz");
+                // }
+                // figName = TString::Format("%shit_%04d_%04d_evt%d.%s", EvtDisplayDir.c_str(), runnum, subrun, totalEvt, outputFileType.c_str());
+                // canvas->SaveAs(figName);
+                // canvas->Clear();
             }
         }
     }
@@ -1211,19 +1250,19 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
     canvas->cd(1);
     hCrossTalkXY->Draw();
     TF1* poissonFix = new TF1("poissonFix", "[0]*TMath::Poisson(x*[1], [1]*[2])", FitRangeCT[0], FitRangeCT[1]);
-    poissonFix->SetParameters(300, 100, 0.04);
-    hCrossTalkXY->Fit("poissonFix", FitOption, "", FitRangeCT[0], FitRangeCT[1]);
-    gStyle->SetOptStat(1110);
-    gStyle->SetOptFit(111);
-    changestatsBoxSize(hCrossTalkXY, 0.7, 0.99, 0.65, 0.935);
+    // poissonFix->SetParameters(300, 100, 0.04);
+    // hCrossTalkXY->Fit("poissonFix", FitOption, "", FitRangeCT[0], FitRangeCT[1]);
+    gStyle->SetOptStat(2210);
+    // gStyle->SetOptFit(111);
+    changestatsBoxSize(hCrossTalkXY, 0.6, 0.99, 0.65, 0.935);
 
     canvas->cd(2);
     hCrossTalkXZ->Draw();
-    poissonFix->SetParameters(300, 100, 0.04);
-    hCrossTalkXZ->Fit("poissonFix", FitOption, "", FitRangeCT[0], FitRangeCT[1]);
-    gStyle->SetOptStat(1110);
-    gStyle->SetOptFit(111);
-    changestatsBoxSize(hCrossTalkXY, 0.7, 0.99, 0.65, 0.935);
+    // poissonFix->SetParameters(300, 100, 0.04);
+    // hCrossTalkXZ->Fit("poissonFix", FitOption, "", FitRangeCT[0], FitRangeCT[1]);
+    gStyle->SetOptStat(2210);
+    // gStyle->SetOptFit(111);
+    changestatsBoxSize(hCrossTalkXY, 0.6, 0.99, 0.65, 0.935);
 
     figName = TString::Format("%sCrossTalk_%04d_%04d.%s", ResultDir.c_str(), runnum, subrun, outputFileType.c_str());
     canvas->SaveAs(figName);
@@ -1235,19 +1274,19 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
 
     canvas->cd(1);
     hCrossTalkXYDarkCut->Draw();
-    poissonFix->SetParameters(300, 100, 0.01);
-    hCrossTalkXYDarkCut->Fit("poissonFix", FitOption, "", FitRangeCTDarkCut[0], FitRangeCTDarkCut[1]);
-    gStyle->SetOptStat(1110);
-    gStyle->SetOptFit(111);
-    changestatsBoxSize(hCrossTalkXY, 0.7, 0.99, 0.65, 0.935);
+    // poissonFix->SetParameters(300, 100, 0.01);
+    // hCrossTalkXYDarkCut->Fit("poissonFix", FitOption, "", FitRangeCTDarkCut[0], FitRangeCTDarkCut[1]);
+    gStyle->SetOptStat(2210);
+    // gStyle->SetOptFit(111);
+    changestatsBoxSize(hCrossTalkXYDarkCut, 0.6, 0.99, 0.65, 0.935);
 
     canvas->cd(2);
     hCrossTalkXZDarkCut->Draw();
     poissonFix->SetParameters(300, 100, 0.01);
-    hCrossTalkXZDarkCut->Fit("poissonFix", FitOption, "", FitRangeCTDarkCut[0], FitRangeCTDarkCut[1]);
-    gStyle->SetOptStat(1110);
-    gStyle->SetOptFit(111);
-    changestatsBoxSize(hCrossTalkXZ, 0.7, 0.99, 0.65, 0.935);
+    // hCrossTalkXZDarkCut->Fit("poissonFix", FitOption, "", FitRangeCTDarkCut[0], FitRangeCTDarkCut[1]);
+    gStyle->SetOptStat(2210);
+    // gStyle->SetOptFit(111);
+    changestatsBoxSize(hCrossTalkXZDarkCut, 0.6, 0.99, 0.65, 0.935);
 
     figName = TString::Format("%sCrossTalkDarkCut_%04d_%04d.%s", ResultDir.c_str(), runnum, subrun, outputFileType.c_str());
     canvas->SaveAs(figName);
@@ -1372,6 +1411,8 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
     hGapCount2s->GetXaxis()->SetNdivisions(fileCount, kFALSE);
     hGapCount1s->GetXaxis()->SetTickLength(1);
     hGapCount2s->GetXaxis()->SetTickLength(1);
+    hGapCount1s->SetStats(kFALSE);
+    hGapCount2s->SetStats(kFALSE);
 
     canvas->cd(1);
     hGapCount1s->Draw("P");
@@ -1447,13 +1488,36 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
     hCrossTalkXYDarkCutMap->GetXaxis()->SetNdivisions(NScifiEachHodo);
     hCrossTalkXYDarkCutMap->GetYaxis()->SetNdivisions(NScifiEachHodo);
     changestatsBoxSize(hCrossTalkXYDarkCutMap, 0.7, 0.9, 0.7, 0.935);
-    drawCubeLine("");
+    if(runnum >= 0 && runnum <= 10)
+    {
+        drawCubeLine("non-welding");
+    }
+    else if(runnum >= 11 && runnum <= 20)
+    {
+        drawCubeLine("100u");
+    }
+    else if(runnum >= 22 && runnum <= 31)
+    {
+        drawCubeLine("200u");
+    }
+
     canvas->cd(2);
     hCrossTalkXZDarkCutMap->Draw("text colz");
     hCrossTalkXZDarkCutMap->GetXaxis()->SetNdivisions(NScifiEachHodo);
     hCrossTalkXZDarkCutMap->GetYaxis()->SetNdivisions(NScifiEachHodo);
     changestatsBoxSize(hCrossTalkXZDarkCutMap, 0.7, 0.9, 0.7, 0.935);
-    drawCubeLine("");
+    if(runnum >= 0 && runnum <= 10)
+    {
+        drawCubeLine("non-welding");
+    }
+    else if(runnum >= 11 && runnum <= 20)
+    {
+        drawCubeLine("100u");
+    }
+    else if(runnum >= 22 && runnum <= 31)
+    {
+        drawCubeLine("200u");
+    }
 
     figName = TString::Format("%sCrossTalkDarkCutMap_%04d_%04d.%s", ResultDir.c_str(), runnum, subrun, outputFileType.c_str());
     canvas->SaveAs(figName);
