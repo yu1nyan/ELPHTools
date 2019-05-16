@@ -500,6 +500,23 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
     const int NBinCT = 100;
     const double MinCT = 0;
     const double MaxCT = 1.0;
+    const int NCubeCT = 8;
+    // 周辺キューブ用配列添字とChの対応
+    // 0 1 2
+    // 3 x 4
+    // 5 6 7
+    const int CubeChMapXZ[] = {43, 44, 62, 40, 58, 37, 38, 56};
+    const int CubeChMapXY[] = {11, 12, 28, 8, 26, 5, 6, 24};
+    const string CubeGeometryName[] = {"upper left", "above", "upper right", "left", "right", "lower left", "below", "lower right"};
+
+    array<TH1D*, NCubeCT> hCrosstalkXZ;
+    array<TH1D*, NCubeCT> hCrosstalkXY;
+    for(int i=0; i<NCubeCT; ++i)
+    {
+        histName = "h";
+        histAxis = ;
+        hCrossTalkXZ[i] = new TH1D();
+    }
     TH1D* hCrossTalkXZ = new TH1D("hCrossTalkXZ", "L.Y. ratio left/center (using Y readout);L.Y. left(ch40)/center(ch41);Number of events", NBinCT, MinCT, MaxCT);
     TH1D* hCrossTalkXY = new TH1D("hCrossTalkXY", "L.Y. ratio left/center (using Z readout);L.Y. left(ch8)/center(ch9);Number of events", NBinCT, MinCT, MaxCT);
 
@@ -1212,17 +1229,17 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
     hCrossTalkXY->Draw();
     TF1* poissonFix = new TF1("poissonFix", "[0]*TMath::Poisson(x*[1], [1]*[2])", FitRangeCT[0], FitRangeCT[1]);
     poissonFix->SetParameters(300, 100, 0.04);
-    hCrossTalkXY->Fit("poissonFix", FitOption, "", FitRangeCT[0], FitRangeCT[1]);
-    gStyle->SetOptStat(1110);
-    gStyle->SetOptFit(111);
+    // hCrossTalkXY->Fit("poissonFix", FitOption, "", FitRangeCT[0], FitRangeCT[1]);
+    gStyle->SetOptStat(2210);
+    // gStyle->SetOptFit(111);
     changestatsBoxSize(hCrossTalkXY, 0.7, 0.99, 0.65, 0.935);
 
     canvas->cd(2);
     hCrossTalkXZ->Draw();
     poissonFix->SetParameters(300, 100, 0.04);
-    hCrossTalkXZ->Fit("poissonFix", FitOption, "", FitRangeCT[0], FitRangeCT[1]);
-    gStyle->SetOptStat(1110);
-    gStyle->SetOptFit(111);
+    // hCrossTalkXZ->Fit("poissonFix", FitOption, "", FitRangeCT[0], FitRangeCT[1]);
+    gStyle->SetOptStat(2210);
+    // gStyle->SetOptFit(111);
     changestatsBoxSize(hCrossTalkXY, 0.7, 0.99, 0.65, 0.935);
 
     figName = TString::Format("%sCrossTalk_%04d_%04d.%s", ResultDir.c_str(), runnum, subrun, outputFileType.c_str());
@@ -1236,17 +1253,17 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
     canvas->cd(1);
     hCrossTalkXYDarkCut->Draw();
     poissonFix->SetParameters(300, 100, 0.01);
-    hCrossTalkXYDarkCut->Fit("poissonFix", FitOption, "", FitRangeCTDarkCut[0], FitRangeCTDarkCut[1]);
-    gStyle->SetOptStat(1110);
-    gStyle->SetOptFit(111);
+    // hCrossTalkXYDarkCut->Fit("poissonFix", FitOption, "", FitRangeCTDarkCut[0], FitRangeCTDarkCut[1]);
+    gStyle->SetOptStat(2210);
+    // gStyle->SetOptFit(111);
     changestatsBoxSize(hCrossTalkXY, 0.7, 0.99, 0.65, 0.935);
 
     canvas->cd(2);
     hCrossTalkXZDarkCut->Draw();
     poissonFix->SetParameters(300, 100, 0.01);
-    hCrossTalkXZDarkCut->Fit("poissonFix", FitOption, "", FitRangeCTDarkCut[0], FitRangeCTDarkCut[1]);
-    gStyle->SetOptStat(1110);
-    gStyle->SetOptFit(111);
+    // hCrossTalkXZDarkCut->Fit("poissonFix", FitOption, "", FitRangeCTDarkCut[0], FitRangeCTDarkCut[1]);
+    gStyle->SetOptStat(2210);
+    // gStyle->SetOptFit(111);
     changestatsBoxSize(hCrossTalkXZ, 0.7, 0.99, 0.65, 0.935);
 
     figName = TString::Format("%sCrossTalkDarkCut_%04d_%04d.%s", ResultDir.c_str(), runnum, subrun, outputFileType.c_str());
