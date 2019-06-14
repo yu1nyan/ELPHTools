@@ -147,10 +147,10 @@ bool isGap(int hodoX, int hodoY, int protoX, int shiftX=0, int shiftY=0)
 //         canvas->Divide(nHistHorizontal, nHistVertical);
 //     }
 //     canvas->cd(1);
-//     hCrossTalkXY->Draw();
+//     hCrosstalkXY->Draw();
 //     canvas->cd(2);
-//     hCrossTalkXZ->Draw();
-//     figName = TString::Format("%sCrossTalk_%04d_%04d.%s", ResultDir.c_str(), runnum, subrun, outputFileType.c_str());
+//     hCrosstalkXZ->Draw();
+//     figName = TString::Format("%sCrosstalk_%04d_%04d.%s", ResultDir.c_str(), runnum, subrun, outputFileType.c_str());
 //     canvas->SaveAs(figName);
 //     canvas->Clear();
 // }
@@ -535,39 +535,39 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
     const int NBinCT = 110;
     const double MinCT = -0.1;
     const double MaxCT = 1.0;
-    TH1D* hCrossTalkXZ = new TH1D("hCrossTalkXZ", "L.Y. ratio left/center (using Y readout);L.Y. left(ch40)/center(ch41);Number of events", NBinCT, MinCT, MaxCT);
-    TH1D* hCrossTalkXY = new TH1D("hCrossTalkXY", "L.Y. ratio left/center (using Z readout);L.Y. left(ch8)/center(ch9);Number of events", NBinCT, MinCT, MaxCT);
+    TH1D* hCrosstalkXZ = new TH1D("hCrosstalkXZ", "L.Y. ratio left/center (using Y readout);L.Y. left(ch40)/center(ch41);Number of events", NBinCT, MinCT, MaxCT);
+    TH1D* hCrosstalkXY = new TH1D("hCrosstalkXY", "L.Y. ratio left/center (using Z readout);L.Y. left(ch8)/center(ch9);Number of events", NBinCT, MinCT, MaxCT);
 
-    TH1D* hCrossTalkXYDarkCut = new TH1D("hCrossTalkXYDarkCut", "L.Y. ratio left/center (using Z readout, pedestal cut);L.Y. left(ch8)/center(ch9);Number of events", NBinCT, MinCT, MaxCT);
-    TH1D* hCrossTalkXZDarkCut = new TH1D("hCrossTalkXZDarkCut", "L.Y. ratio left/center (using Y readout, pedestal cut);L.Y. left(ch40)/center(ch41);Number of events", NBinCT, MinCT, MaxCT);
+    TH1D* hCrosstalkXYDarkCut = new TH1D("hCrosstalkXYDarkCut", "L.Y. ratio left/center (using Z readout, pedestal cut);L.Y. left(ch8)/center(ch9);Number of events", NBinCT, MinCT, MaxCT);
+    TH1D* hCrosstalkXZDarkCut = new TH1D("hCrosstalkXZDarkCut", "L.Y. ratio left/center (using Y readout, pedestal cut);L.Y. left(ch40)/center(ch41);Number of events", NBinCT, MinCT, MaxCT);
 
-    TH1D* hCrossTalkXYDarkCutEachCell[NScifiEachHodo][NScifiEachHodo];
-    TH1D* hCrossTalkXZDarkCutEachCell[NScifiEachHodo][NScifiEachHodo];
+    TH1D* hCrosstalkXYDarkCutEachCell[NScifiEachHodo][NScifiEachHodo];
+    TH1D* hCrosstalkXZDarkCutEachCell[NScifiEachHodo][NScifiEachHodo];
     for (int i = 0; i < NScifiEachHodo; i++)
     {
         for (int j = 0; j < NScifiEachHodo; j++)
         {
-            histName = "hCrossTalkXYDarkCutX" + to_string(i + 1) + "Y" + to_string(j + 1);
+            histName = "hCrosstalkXYDarkCutX" + to_string(i + 1) + "Y" + to_string(j + 1);
             histAxis = "L.Y. ratio left/center (using Z readout, Dark count cut, Cell X=" + to_string(i + 1) + " Y=" + to_string(j + 1) + ");L.Y. left(ch8)/center(ch9);Number of events";
-            hCrossTalkXYDarkCutEachCell[i][j] = new TH1D(histName.c_str(), histAxis.c_str(), NBinCT, MinCT, MaxCT);
+            hCrosstalkXYDarkCutEachCell[i][j] = new TH1D(histName.c_str(), histAxis.c_str(), NBinCT, MinCT, MaxCT);
 
-            histName = "hCrossTalkXZDarkCutX" + to_string(i + 1) + "Y" + to_string(j + 1);
+            histName = "hCrosstalkXZDarkCutX" + to_string(i + 1) + "Y" + to_string(j + 1);
             histAxis = "L.Y. ratio left/center (using Y readout, Dark count cut, Cell X=" + to_string(i + 1) + " Y=" + to_string(j + 1) + ");L.Y. left(ch40)/center(ch41);Number of events";
-            hCrossTalkXZDarkCutEachCell[i][j] = new TH1D(histName.c_str(), histAxis.c_str(), NBinCT, MinCT, MaxCT);
+            hCrosstalkXZDarkCutEachCell[i][j] = new TH1D(histName.c_str(), histAxis.c_str(), NBinCT, MinCT, MaxCT);
         }
     }
 
     TGraph* scatterCTXY = new TGraph();
     TGraph* scatterCTXZ = new TGraph();
 
-    const double MinCTMap = 0;
-    const double MaxCTMap = 6;
-    TH2D* hCrossTalkXYDarkCutMap = new TH2D("hCrossTalkXYDCMap", "Cross talk rate (using Z readout, pedestal cut);cell # along X;cell # along Y;Cross talk rate (%)", NScifiEachHodo, MinHodoMap, MaxHodoMap, NScifiEachHodo, MinHodoMap, MaxHodoMap);
-    TH2D* hCrossTalkXZDarkCutMap = new TH2D("hCrossTalkXZDCMap", "Cross talk rate (using Y readout, pedestal cut);cell # along X;cell # along Y;Cross talk rate (%)", NScifiEachHodo, MinHodoMap, MaxHodoMap, NScifiEachHodo, MinHodoMap, MaxHodoMap);
-    hCrossTalkXYDarkCutMap->SetMinimum(MinCTMap);
-    hCrossTalkXYDarkCutMap->SetMaximum(MaxCTMap);
-    hCrossTalkXZDarkCutMap->SetMinimum(MinCTMap);
-    hCrossTalkXZDarkCutMap->SetMaximum(MaxCTMap);
+    const double MinCTMap = 0.;
+    const double MaxCTMap = 10.;
+    TH2D* hCrosstalkXYDarkCutMap = new TH2D("hCrosstalkXYDCMap", "Cross talk rate (using Z readout, pedestal cut);cell # along X;cell # along Y;Cross talk rate (%)", NScifiEachHodo, MinHodoMap, MaxHodoMap, NScifiEachHodo, MinHodoMap, MaxHodoMap);
+    TH2D* hCrosstalkXZDarkCutMap = new TH2D("hCrosstalkXZDCMap", "Cross talk rate (using Y readout, pedestal cut);cell # along X;cell # along Y;Cross talk rate (%)", NScifiEachHodo, MinHodoMap, MaxHodoMap, NScifiEachHodo, MinHodoMap, MaxHodoMap);
+    hCrosstalkXYDarkCutMap->SetMinimum(MinCTMap);
+    hCrosstalkXYDarkCutMap->SetMaximum(MaxCTMap);
+    hCrosstalkXZDarkCutMap->SetMinimum(MinCTMap);
+    hCrosstalkXZDarkCutMap->SetMaximum(MaxCTMap);
 
     // Gap check
     const int GapGraphMax = 50000 * 30;
@@ -962,24 +962,24 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
             // ホドスコープ内側4ch×4ch（または2×2）ヒットをクロストークのヒストグラムに使う
             if (goodEventForCT)
             {
-                hCrossTalkXY->Fill(leftPEXY / centerPEXY);
-                hCrossTalkXZ->Fill(leftPEXZ / centerPEXZ);
+                hCrosstalkXY->Fill(leftPEXY / centerPEXY);
+                hCrosstalkXZ->Fill(leftPEXZ / centerPEXZ);
 
                 if (leftPEXY < DarkCutPEForCT)
                 {
-                    hCrossTalkXYDarkCut->Fill(0);
+                    hCrosstalkXYDarkCut->Fill(0);
                 }
                 else
                 {
-                    hCrossTalkXYDarkCut->Fill(leftPEXY / centerPEXY);
+                    hCrosstalkXYDarkCut->Fill(leftPEXY / centerPEXY);
                 }
                 if (leftPEXZ < DarkCutPEForCT)
                 {
-                    hCrossTalkXZDarkCut->Fill(0);
+                    hCrosstalkXZDarkCut->Fill(0);
                 }
                 else
                 {
-                    hCrossTalkXZDarkCut->Fill(leftPEXZ / centerPEXZ);
+                    hCrosstalkXZDarkCut->Fill(leftPEXZ / centerPEXZ);
                 }
 
                 scatterCTXY->SetPoint(countCTPoint, centerPEXY, leftPEXY);
@@ -1011,19 +1011,19 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
                 #endif
                 if (leftPEXY < DarkCutPEForCT)
                 {
-                    hCrossTalkXYDarkCutEachCell[maxChHodo[static_cast<int> (EHodoscope::HSX2)] - 1][maxChHodo[static_cast<int> (EHodoscope::HSY2)] - 1]->Fill(0);
+                    hCrosstalkXYDarkCutEachCell[maxChHodo[static_cast<int> (EHodoscope::HSX2)] - 1][maxChHodo[static_cast<int> (EHodoscope::HSY2)] - 1]->Fill(0);
                 }
                 else // if(leftPEXY*RatioCutForCT < centerPEXY)
                 {
-                    hCrossTalkXYDarkCutEachCell[maxChHodo[static_cast<int> (EHodoscope::HSX2)] - 1][maxChHodo[static_cast<int> (EHodoscope::HSY2)] - 1]->Fill(leftPEXY / centerPEXY);
+                    hCrosstalkXYDarkCutEachCell[maxChHodo[static_cast<int> (EHodoscope::HSX2)] - 1][maxChHodo[static_cast<int> (EHodoscope::HSY2)] - 1]->Fill(leftPEXY / centerPEXY);
                 }
                 if (leftPEXZ < DarkCutPEForCT)
                 {
-                    hCrossTalkXZDarkCutEachCell[maxChHodo[static_cast<int> (EHodoscope::HSX2)] - 1][maxChHodo[static_cast<int> (EHodoscope::HSY2)] - 1]->Fill(0);
+                    hCrosstalkXZDarkCutEachCell[maxChHodo[static_cast<int> (EHodoscope::HSX2)] - 1][maxChHodo[static_cast<int> (EHodoscope::HSY2)] - 1]->Fill(0);
                 }
                 else // if(leftPEXZ*RatioCutForCT < centerPEXZ)
                 {
-                    hCrossTalkXZDarkCutEachCell[maxChHodo[static_cast<int> (EHodoscope::HSX2)] - 1][maxChHodo[static_cast<int> (EHodoscope::HSY2)] - 1]->Fill(leftPEXZ / centerPEXZ);
+                    hCrosstalkXZDarkCutEachCell[maxChHodo[static_cast<int> (EHodoscope::HSX2)] - 1][maxChHodo[static_cast<int> (EHodoscope::HSY2)] - 1]->Fill(leftPEXZ / centerPEXZ);
                 }
             }
 
@@ -1241,30 +1241,30 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
 
 
 
-    // Cross talk
+    // Crosstalk
     // normal
     nHistHori = 2;
     nHistVert = 1;
     canvas = new TCanvas("canvas", "", histWidth * nHistHori, histHeight * nHistVert);
     canvas->Divide(nHistHori, nHistVert);
     canvas->cd(1);
-    hCrossTalkXY->Draw();
+    hCrosstalkXY->Draw();
     TF1* poissonFix = new TF1("poissonFix", "[0]*TMath::Poisson(x*[1], [1]*[2])", FitRangeCT[0], FitRangeCT[1]);
     // poissonFix->SetParameters(300, 100, 0.04);
-    // hCrossTalkXY->Fit("poissonFix", FitOption, "", FitRangeCT[0], FitRangeCT[1]);
+    // hCrosstalkXY->Fit("poissonFix", FitOption, "", FitRangeCT[0], FitRangeCT[1]);
     gStyle->SetOptStat(2210);
     // gStyle->SetOptFit(111);
-    changestatsBoxSize(hCrossTalkXY, 0.6, 0.99, 0.65, 0.935);
+    changestatsBoxSize(hCrosstalkXY, 0.6, 0.99, 0.65, 0.935);
 
     canvas->cd(2);
-    hCrossTalkXZ->Draw();
+    hCrosstalkXZ->Draw();
     // poissonFix->SetParameters(300, 100, 0.04);
-    // hCrossTalkXZ->Fit("poissonFix", FitOption, "", FitRangeCT[0], FitRangeCT[1]);
+    // hCrosstalkXZ->Fit("poissonFix", FitOption, "", FitRangeCT[0], FitRangeCT[1]);
     gStyle->SetOptStat(2210);
     // gStyle->SetOptFit(111);
-    changestatsBoxSize(hCrossTalkXY, 0.6, 0.99, 0.65, 0.935);
+    changestatsBoxSize(hCrosstalkXZ, 0.6, 0.99, 0.65, 0.935);
 
-    figName = TString::Format("%sCrossTalk_%04d_%04d.%s", ResultDir.c_str(), runnum, subrun, outputFileType.c_str());
+    figName = TString::Format("%sCrosstalk_%04d_%04d.%s", ResultDir.c_str(), runnum, subrun, outputFileType.c_str());
     canvas->SaveAs(figName);
     canvas->Clear();
 
@@ -1273,22 +1273,22 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
     canvas->Divide(nHistHori, nHistVert);
 
     canvas->cd(1);
-    hCrossTalkXYDarkCut->Draw();
+    hCrosstalkXYDarkCut->Draw();
     // poissonFix->SetParameters(300, 100, 0.01);
-    // hCrossTalkXYDarkCut->Fit("poissonFix", FitOption, "", FitRangeCTDarkCut[0], FitRangeCTDarkCut[1]);
+    // hCrosstalkXYDarkCut->Fit("poissonFix", FitOption, "", FitRangeCTDarkCut[0], FitRangeCTDarkCut[1]);
     gStyle->SetOptStat(2210);
     // gStyle->SetOptFit(111);
-    changestatsBoxSize(hCrossTalkXYDarkCut, 0.6, 0.99, 0.65, 0.935);
+    changestatsBoxSize(hCrosstalkXYDarkCut, 0.6, 0.99, 0.65, 0.935);
 
     canvas->cd(2);
-    hCrossTalkXZDarkCut->Draw();
+    hCrosstalkXZDarkCut->Draw();
     poissonFix->SetParameters(300, 100, 0.01);
-    // hCrossTalkXZDarkCut->Fit("poissonFix", FitOption, "", FitRangeCTDarkCut[0], FitRangeCTDarkCut[1]);
+    // hCrosstalkXZDarkCut->Fit("poissonFix", FitOption, "", FitRangeCTDarkCut[0], FitRangeCTDarkCut[1]);
     gStyle->SetOptStat(2210);
     // gStyle->SetOptFit(111);
-    changestatsBoxSize(hCrossTalkXZDarkCut, 0.6, 0.99, 0.65, 0.935);
+    changestatsBoxSize(hCrosstalkXZDarkCut, 0.6, 0.99, 0.65, 0.935);
 
-    figName = TString::Format("%sCrossTalkDarkCut_%04d_%04d.%s", ResultDir.c_str(), runnum, subrun, outputFileType.c_str());
+    figName = TString::Format("%sCrosstalkDarkCut_%04d_%04d.%s", ResultDir.c_str(), runnum, subrun, outputFileType.c_str());
     canvas->SaveAs(figName);
     canvas->Clear();
 
@@ -1334,29 +1334,29 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
     canvas->Clear();
 
     // Each Cell
-    TFile histsCTXYDarkCutEachCell(TString::Format("%sCrossTalkXYDarkCutEachCell_%04d_%04d.root", ResultDir.c_str(), runnum, subrun), "RECREATE");
+    TFile histsCTXYDarkCutEachCell(TString::Format("%sCrosstalkXYDarkCutEachCell_%04d_%04d.root", ResultDir.c_str(), runnum, subrun), "RECREATE");
     canvas = new TCanvas();
     for (int i = 0; i < NScifiEachHodo; i++)
     {
         for (int j = 0; j < NScifiEachHodo; j++)
         {
-            hCrossTalkXYDarkCutEachCell[j][i]->Draw();
-            hCrossTalkXYDarkCutEachCell[j][i]->Write();
-            hCrossTalkXYDarkCutMap->SetBinContent(j + 1, i + 1, hCrossTalkXYDarkCutEachCell[j][i]->GetMean() * 100); // *100 means percentile
+            hCrosstalkXYDarkCutEachCell[j][i]->Draw();
+            hCrosstalkXYDarkCutEachCell[j][i]->Write();
+            hCrosstalkXYDarkCutMap->SetBinContent(j + 1, i + 1, hCrosstalkXYDarkCutEachCell[j][i]->GetMean() * 100); // *100 means percentile
         }
     }
     histsCTXYDarkCutEachCell.Close();
     canvas->Clear();
 
-    TFile histsCTXZDarkCutEachCell(TString::Format("%sCrossTalkXZDarkCutEachCell_%04d_%04d.root", ResultDir.c_str(), runnum, subrun), "RECREATE");
+    TFile histsCTXZDarkCutEachCell(TString::Format("%sCrosstalkXZDarkCutEachCell_%04d_%04d.root", ResultDir.c_str(), runnum, subrun), "RECREATE");
     canvas = new TCanvas();
     for (int i = 0; i < NScifiEachHodo; i++)
     {
         for (int j = 0; j < NScifiEachHodo; j++)
         {
-            hCrossTalkXZDarkCutEachCell[j][i]->Draw();
-            hCrossTalkXZDarkCutEachCell[j][i]->Write();
-            hCrossTalkXZDarkCutMap->SetBinContent(j + 1, i + 1, hCrossTalkXZDarkCutEachCell[j][i]->GetMean() * 100);  // *100 means percentile
+            hCrosstalkXZDarkCutEachCell[j][i]->Draw();
+            hCrosstalkXZDarkCutEachCell[j][i]->Write();
+            hCrosstalkXZDarkCutMap->SetBinContent(j + 1, i + 1, hCrosstalkXZDarkCutEachCell[j][i]->GetMean() * 100);  // *100 means percentile
         }
     }
     histsCTXZDarkCutEachCell.Close();
@@ -1389,7 +1389,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
     scatterCTXZ->GetYaxis()->SetRangeUser(MinPEScatterCTLeft, MaxPEScatterCTLeft);
     scatterCTXZ->Draw("AP");
 
-    figName = TString::Format("%sCrossTalkScatterPlot_%04d_%04d.%s", ResultDir.c_str(), runnum, subrun, outputFileType.c_str());
+    figName = TString::Format("%sCrosstalkScatterPlot_%04d_%04d.%s", ResultDir.c_str(), runnum, subrun, outputFileType.c_str());
     canvas->SaveAs(figName);
     canvas->Clear();
 
@@ -1475,19 +1475,25 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
     TColor::CreateGradientColorTable(2, stops, red, green, blue, NCont);
     gStyle->SetNumberContours(NCont);
 
-    // Beam hit position dependency of cross talk (Hodomap)
+    // Beam hit position dependency of crosstalk (Hodomap)
     nHistHori = 2;
     nHistVert = 1;
-    histWidth = 1200;
+    histWidth = 1240;
     histHeight = 1200;
     gStyle->SetPaintTextFormat("3.2f");
+
+
     canvas = new TCanvas("canvas", "", histWidth * nHistHori, histHeight * nHistVert);
     canvas->Divide(nHistHori, nHistVert);
     canvas->cd(1);
-    hCrossTalkXYDarkCutMap->Draw("text colz");
-    hCrossTalkXYDarkCutMap->GetXaxis()->SetNdivisions(NScifiEachHodo);
-    hCrossTalkXYDarkCutMap->GetYaxis()->SetNdivisions(NScifiEachHodo);
-    changestatsBoxSize(hCrossTalkXYDarkCutMap, 0.7, 0.9, 0.7, 0.935);
+    hCrosstalkXYDarkCutMap->Draw("text colz");
+    hCrosstalkXYDarkCutMap->GetXaxis()->SetNdivisions(NScifiEachHodo);
+    hCrosstalkXYDarkCutMap->GetYaxis()->SetNdivisions(NScifiEachHodo);
+
+    // hCrosstalkXYDarkCutMap->GetZaxis()->SetTitleOffset(1.3);
+    gPad->SetRightMargin(0.12);
+    hCrosstalkXYDarkCutMap->SetStats(kFALSE);
+
     if(runnum >= 0 && runnum <= 10)
     {
         drawCubeLine("non-welding");
@@ -1502,10 +1508,12 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
     }
 
     canvas->cd(2);
-    hCrossTalkXZDarkCutMap->Draw("text colz");
-    hCrossTalkXZDarkCutMap->GetXaxis()->SetNdivisions(NScifiEachHodo);
-    hCrossTalkXZDarkCutMap->GetYaxis()->SetNdivisions(NScifiEachHodo);
-    changestatsBoxSize(hCrossTalkXZDarkCutMap, 0.7, 0.9, 0.7, 0.935);
+    hCrosstalkXZDarkCutMap->Draw("text colz");
+    hCrosstalkXZDarkCutMap->GetXaxis()->SetNdivisions(NScifiEachHodo);
+    hCrosstalkXZDarkCutMap->GetYaxis()->SetNdivisions(NScifiEachHodo);
+    gPad->SetRightMargin(0.12);
+    hCrosstalkXZDarkCutMap->SetStats(kFALSE);
+
     if(runnum >= 0 && runnum <= 10)
     {
         drawCubeLine("non-welding");
@@ -1519,7 +1527,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
         drawCubeLine("200u");
     }
 
-    figName = TString::Format("%sCrossTalkDarkCutMap_%04d_%04d.%s", ResultDir.c_str(), runnum, subrun, outputFileType.c_str());
+    figName = TString::Format("%sCrosstalkDarkCutMap_%04d_%04d.%s", ResultDir.c_str(), runnum, subrun, outputFileType.c_str());
     canvas->SaveAs(figName);
     canvas->Clear();
 
