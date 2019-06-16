@@ -94,21 +94,6 @@ bool ToScintiCh::isConnected(EEasiroc easirocType, int easirocCh)
     }
     else if (scintiType == EScintiType::NineCubes)
     {
-        if (easirocType == EEasiroc::Scinti2)
-        {
-            switch (easirocCh)
-            {
-                case 40:
-                case 41:
-                case 58:
-                case 12:
-                case 9:
-                case 6:
-                    return true;
-                default:
-                    return false;
-            }
-        }
         if (easirocType == EEasiroc::Scinti1)
         {
             switch (easirocCh)
@@ -122,6 +107,21 @@ bool ToScintiCh::isConnected(EEasiroc easirocType, int easirocCh)
                 case 11:
                 case 12:
                 case 28:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+        if (easirocType == EEasiroc::Scinti2)
+        {
+            switch (easirocCh)
+            {
+                case 40:
+                case 41:
+                case 58:
+                case 12:
+                case 9:
+                case 6:
                     return true;
                 default:
                     return false;
@@ -193,9 +193,6 @@ tuple<EScintiSurface, int, int> ToScintiCh::getCh(EEasiroc easirocType, int easi
         {
             switch (easirocCh)
             {
-                // case 9: return forward_as_tuple(EScintiSurface::ZY, 1, 1);
-                // case 40: return forward_as_tuple(EScintiSurface::XZ, 1, 1);
-                // case 41: return forward_as_tuple(EScintiSurface::XZ, 2, 1);
                 case 9: return forward_as_tuple(EScintiSurface::ZY, 3, 3);
                 case 40: return forward_as_tuple(EScintiSurface::XZ, 2, 3);
                 case 41: return forward_as_tuple(EScintiSurface::XZ, 3, 3);
@@ -208,6 +205,39 @@ tuple<EScintiSurface, int, int> ToScintiCh::getCh(EEasiroc easirocType, int easi
             {
                 case 8: return forward_as_tuple(EScintiSurface::XY, 2, 3);
                 case 9: return forward_as_tuple(EScintiSurface::XY, 3, 3);
+                default: return forward_as_tuple(EScintiSurface::None, 0, 0);
+            }
+        }
+    }
+    else if (scintiType == EScintiType::NineCubes)
+    {
+        if (easirocType == EEasiroc::Scinti1)
+        {
+            switch (easirocCh)
+            {
+                case 5: return forward_as_tuple(EScintiSurface::XY, 2, 2);
+                case 6: return forward_as_tuple(EScintiSurface::XY, 3, 2);
+                case 24: return forward_as_tuple(EScintiSurface::XY, 4, 2);
+                case 8: return forward_as_tuple(EScintiSurface::XY, 2, 3);
+                case 9: return forward_as_tuple(EScintiSurface::XY, 3, 3);
+                case 26: return forward_as_tuple(EScintiSurface::XY, 4, 3);
+                case 11: return forward_as_tuple(EScintiSurface::XY, 2, 4);
+                case 12: return forward_as_tuple(EScintiSurface::XY, 3, 4);
+                case 28: return forward_as_tuple(EScintiSurface::XY, 4, 4);
+                default: return forward_as_tuple(EScintiSurface::None, 0, 0);
+            }
+        }
+        else
+        {
+
+            switch (easirocCh)
+            {
+                case 40: return forward_as_tuple(EScintiSurface::XZ, 2, 3);
+                case 41: return forward_as_tuple(EScintiSurface::XZ, 3, 3);
+                case 58: return forward_as_tuple(EScintiSurface::XZ, 4, 3);
+                case 6: return forward_as_tuple(EScintiSurface::ZY, 3, 2);
+                case 9: return forward_as_tuple(EScintiSurface::ZY, 3, 3);
+                case 12: return forward_as_tuple(EScintiSurface::ZY, 3, 4);
                 default: return forward_as_tuple(EScintiSurface::None, 0, 0);
             }
         }
