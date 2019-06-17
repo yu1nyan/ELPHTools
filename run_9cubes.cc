@@ -988,6 +988,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
 
 
             // セルごとのクロストーク
+            // TODO: キューブのヒット情報を用いて余計なイベントを除去する
             if (goodEventForCTCell)
             {
                 // #ifdef DEBUG
@@ -1238,7 +1239,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
         // poissonFix->SetParameters(300, 100, 0.04);
         // hCrosstalkXY->Fit("poissonFix", FitOption, "", FitRangeCT[0], FitRangeCT[1]);
         gStyle->SetOptStat(2210);
-        gPad->SetLogy();
+        // gPad->SetLogy();
         // gStyle->SetOptFit(111);
         changestatsBoxSize(hCrosstalkXY[i], 0.7, 0.99, 0.65, 0.935);
         figName = TString::Format("%sCrosstalk%d_%04d_%04d.%s", ResultDir.c_str(), i, runnum, subrun, outputFileType.c_str());
@@ -1255,7 +1256,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
         // poissonFix->SetParameters(300, 100, 0.01);
         // hCrosstalkXYDarkCut->Fit("poissonFix", FitOption, "", FitRangeCTDarkCut[0], FitRangeCTDarkCut[1]);
         gStyle->SetOptStat(2210);
-        gPad->SetLogy();
+        // gPad->SetLogy();
         // gStyle->SetOptFit(111);
         changestatsBoxSize(hCrosstalkXYDarkCut[i], 0.7, 0.99, 0.65, 0.935);
         figName = TString::Format("%sCrosstalkDarkCut%d_%04d_%04d.%s", ResultDir.c_str(), i, runnum, subrun, outputFileType.c_str());
