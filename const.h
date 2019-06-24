@@ -1,9 +1,17 @@
+// enum class EScintiSurface
+// {
+//     XY, ZY, XZ, None
+// };
+
 enum class EScintiSurface
 {
-    XY, ZY, XZ, None
+    ZY, XZ, XY, None
 };
 
-const string SurfaceName[] = {"XY", "ZY", "XZ"};
+
+// const string SurfaceName[] = {"XY", "ZY", "XZ"};
+const string SurfaceName[] = {"ZY", "XZ", "XY"};
+const string ReadoutSurfaceName[] = {"X", "Y", "Z"};
 
 // EASIROCのCh順に並べる
 enum class EHodoscope
