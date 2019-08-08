@@ -245,6 +245,11 @@ void run_proto(int runnum, int fileCount, int shiftHSX1                         
     const int hodoHighXForCTCell = 16;
     const int hodoLowYForCTCell = 1;
     const int hodoHighYForCTCell = 16;
+    //
+    // const int hodoLowXForCTCell = 7;
+    // const int hodoHighXForCTCell = 10;
+    // const int hodoLowYForCTCell = 7;
+    // const int hodoHighYForCTCell = 10;
 
     const double DarkCutPEForCT = 0.5;
 
@@ -487,6 +492,8 @@ void run_proto(int runnum, int fileCount, int shiftHSX1                         
     const int NCubeCT = 8;
     const double MinCTMap = 0;
     const double MaxCTMap = 10;
+    const int CenterCubeXOfXY = 3;
+    const int CenterCubeYOfXY = 3;
     // For scatter histograms
     const double NBinCTScatter = 100;
     const double MinCTScatter = -4.5;
@@ -593,8 +600,9 @@ void run_proto(int runnum, int fileCount, int shiftHSX1                         
     array<int, NHodo> maxChHodo;
 
     int maxChProtoXOfXY;
+    int maxChProtoYOfXY;
     int maxChProtoXOfXZ;
-    double maxPEProtoXOfXY;
+    double maxPEProtoXY;
     double maxPEProtoXOfXZ;
 
     bool goodEvent;
@@ -804,9 +812,11 @@ void run_proto(int runnum, int fileCount, int shiftHSX1                         
             maxChHodo = { };
 
             maxChProtoXOfXY = 0;
+            maxChProtoYOfXY = 0;
             maxChProtoXOfXZ = 0;
-            maxPEProtoXOfXY = 0.0;
+            maxPEProtoXY = 0.0;
             maxPEProtoXOfXZ = 0.0;
+
 
             goodEvent = false;
             singleHit = false;
@@ -819,6 +829,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1                         
             goodEventForCTStraight = false;
             goodEventForCTCell = false;
 
+            // Hodoscope loop
             for (int ch = 0; ch < NScifi; ch++)
             {
                 pe[static_cast<int> (EEasiroc::Hodoscope)][ch] = (double(adc[static_cast<int> (EEasiroc::Hodoscope)][ch]) - mean_ped[2][ch]) / gain[2][ch];
@@ -858,6 +869,76 @@ void run_proto(int runnum, int fileCount, int shiftHSX1                         
                 }
             }
 
+
+            // prototype loop
+            for (auto itr = usingProtoCh.begin(); itr != usingProtoCh.end(); ++itr)
+            {
+                EEasiroc easiroc = get<0> (*itr);
+                int easirocCh = get<1> (*itr);
+                EScintiSurface surface = get<2> (*itr);
+                int horizontal = get<3> (*itr);
+                int vertical = get<4> (*itr);
+                #ifdef DEBUG
+                    cout << "usingProtoCh: " << easirocCh << endl;
+                #endif
+                pe[static_cast<int> (easiroc)][easirocCh] = (double(adc[static_cast<int> (easiroc)][easirocCh]) - mean_ped[static_cast<int> (easiroc)][easirocCh]) / gain[static_cast<int> (easiroc)][easirocCh];
+                // pe[static_cast <int>(easiroc)][easirocCh] = double(floor(pe[static_cast <int>(easiroc)][easirocCh] * 10) / 10);
+
+                hProto[static_cast<int> (surface)]->SetBinContent(horizontal, vertical, pe[static_cast<int> (easiroc)][easirocCh]);
+
+
+
+                if (pe[static_cast<int> (easiroc)][easirocCh] > ProtoPEThreshold)
+                {
+                    hHitRateProto[static_cast<int> (surface)]->Fill(horizontal, vertical);
+                    hPEProto[static_cast<int> (surface)]->Fill(pe[static_cast<int> (easiroc)][easirocCh]);
+                    hPEProtoEach[static_cast<int> (surface)][horizontal][vertical]->Fill(pe[static_cast<int> (easiroc)][easirocCh]);
+
+                    // scintiHit = true;
+
+                    if (goodEvent && singleHit)
+                    {
+                        // hPEProtoGood[static_cast<int> (surface)]->Fill(pe[static_cast<int> (easiroc)][easirocCh]);
+                    }
+
+                    // Search a channel of max pe
+                    if (surface == EScintiSurface::XY && pe[static_cast<int> (easiroc)][easirocCh] > maxPEProtoXY)
+                    {
+                        maxChProtoXOfXY = horizontal;
+                        maxChProtoYOfXY = vertical;
+                        maxPEProtoXY = pe[static_cast<int> (easiroc)][easirocCh];
+                    }
+                    if (surface == EScintiSurface::XZ && pe[static_cast<int> (easiroc)][easirocCh] > maxPEProtoXOfXZ)
+                    {
+                        maxChProtoXOfXZ = horizontal;
+                        maxPEProtoXOfXZ = pe[static_cast<int> (easiroc)][easirocCh];
+                    }
+
+                    if (isStraightBeam)
+                    {
+                        scintiHitEachSurface[static_cast<int> (surface)] = true;
+                    }
+                }
+            }
+
+            // プロトタイプの読み出し面ごとのgood event数
+            for (int i = 0; i < NSurfaceScinti; i++)
+            {
+                if (scintiHitEachSurface[i])
+                    countScintiHitEachSurfaceCell[i][maxChHodo[static_cast<int> (EHodoscope::HSX2)] - 1][maxChHodo[static_cast<int> (EHodoscope::HSY2)] - 1]++;
+            }
+
+
+            centerPEXY = pe[static_cast<int> (EEasiroc::Scinti1)][9];
+            // centerPEXZ = pe[static_cast<int> (EEasiroc::Scinti2)][41];
+            // leftPEXZ = pe[static_cast<int> (EEasiroc::Scinti2)][40];
+            for (int i = 0; i < NCubeCT; i++)
+            {
+                aroundPEXY[i] = pe[static_cast<int> (EEasiroc::Scinti1)][CubeChMapXY[i]];
+            }
+
+
+            // 各種Good eventの条件
             // ホドスコープ全てにヒット→good event
             if (count(trigHodo.begin(), trigHodo.end(), true) == NHodo)
             {
@@ -914,79 +995,19 @@ void run_proto(int runnum, int fileCount, int shiftHSX1                         
             goodEventForCT = goodEventForCTUpDown;
 
             // CellごとのCross talk分布出す用
-            if (isStraightBeam && maxChHodo[static_cast<int> (EHodoscope::HSX2)] >= hodoLowXForCTCell && maxChHodo[static_cast<int> (EHodoscope::HSX2)] <= hodoHighXForCTCell && maxChHodo[static_cast<int> (EHodoscope::HSY2)] >= hodoLowYForCTCell && maxChHodo[static_cast<int> (EHodoscope::HSY2)] <= hodoHighYForCTCell)
+            if (isStraightBeam &&
+                maxChHodo[static_cast<int> (EHodoscope::HSX2)] >= hodoLowXForCTCell &&
+                maxChHodo[static_cast<int> (EHodoscope::HSX2)] <= hodoHighXForCTCell &&
+                maxChHodo[static_cast<int> (EHodoscope::HSY2)] >= hodoLowYForCTCell &&
+                maxChHodo[static_cast<int> (EHodoscope::HSY2)] <= hodoHighYForCTCell &&
+                maxChProtoXOfXY == CenterCubeXOfXY &&
+                maxChProtoYOfXY == CenterCubeYOfXY
+            )
             {
                 goodEventForCTCell = true;
                 countCTCell++;
             }
 
-
-
-
-            // prototype loop
-            for (auto itr = usingProtoCh.begin(); itr != usingProtoCh.end(); ++itr)
-            {
-                EEasiroc easiroc = get<0> (*itr);
-                int easirocCh = get<1> (*itr);
-                EScintiSurface surface = get<2> (*itr);
-                int horizontal = get<3> (*itr);
-                int vertical = get<4> (*itr);
-                #ifdef DEBUG
-                    cout << "usingProtoCh: " << easirocCh << endl;
-                #endif
-                pe[static_cast<int> (easiroc)][easirocCh] = (double(adc[static_cast<int> (easiroc)][easirocCh]) - mean_ped[static_cast<int> (easiroc)][easirocCh]) / gain[static_cast<int> (easiroc)][easirocCh];
-                // pe[static_cast <int>(easiroc)][easirocCh] = double(floor(pe[static_cast <int>(easiroc)][easirocCh] * 10) / 10);
-
-                hProto[static_cast<int> (surface)]->SetBinContent(horizontal, vertical, pe[static_cast<int> (easiroc)][easirocCh]);
-
-
-
-                if (pe[static_cast<int> (easiroc)][easirocCh] > ProtoPEThreshold)
-                {
-                    hHitRateProto[static_cast<int> (surface)]->Fill(horizontal, vertical);
-                    hPEProto[static_cast<int> (surface)]->Fill(pe[static_cast<int> (easiroc)][easirocCh]);
-                    hPEProtoEach[static_cast<int> (surface)][horizontal][vertical]->Fill(pe[static_cast<int> (easiroc)][easirocCh]);
-
-                    // scintiHit = true;
-
-                    if (goodEvent && singleHit)
-                    {
-                        // hPEProtoGood[static_cast<int> (surface)]->Fill(pe[static_cast<int> (easiroc)][easirocCh]);
-                    }
-
-                    if (surface == EScintiSurface::XY && pe[static_cast<int> (easiroc)][easirocCh] > maxPEProtoXOfXY)
-                    {
-                        maxChProtoXOfXY = horizontal;
-                        maxPEProtoXOfXY = pe[static_cast<int> (easiroc)][easirocCh];
-                    }
-                    if (surface == EScintiSurface::XZ && pe[static_cast<int> (easiroc)][easirocCh] > maxPEProtoXOfXZ)
-                    {
-                        maxChProtoXOfXZ = horizontal;
-                        maxPEProtoXOfXZ = pe[static_cast<int> (easiroc)][easirocCh];
-                    }
-
-                    if (isStraightBeam)
-                    {
-                        scintiHitEachSurface[static_cast<int> (surface)] = true;
-                    }
-                }
-            }
-
-            // プロトタイプの読み出し面ごとのgood event数
-            for (int i = 0; i < NSurfaceScinti; i++)
-            {
-                if (scintiHitEachSurface[i])
-                    countScintiHitEachSurfaceCell[i][maxChHodo[static_cast<int> (EHodoscope::HSX2)] - 1][maxChHodo[static_cast<int> (EHodoscope::HSY2)] - 1]++;
-            }
-
-
-            centerPEXY = pe[static_cast<int> (EEasiroc::Scinti1)][9];
-            // centerPEXZ = pe[static_cast<int> (EEasiroc::Scinti2)][41];
-            // leftPEXZ = pe[static_cast<int> (EEasiroc::Scinti2)][40];
-            for (int i = 0; i < NCubeCT; i++)
-            {
-                aroundPEXY[i] = pe[static_cast<int> (EEasiroc::Scinti1)][CubeChMapXY[i]];
-            }
 
             // ホドスコープ内側4ch×4chヒットをクロストークのヒストグラムに使う
             if (goodEventForCT)
@@ -1037,8 +1058,12 @@ void run_proto(int runnum, int fileCount, int shiftHSX1                         
                 //         cout << "evt=" << totalEvt << ", XY, left: " << leftPEXY << ", center: " << centerPEXY << endl;
                 //     }
                 // #endif
+
+                if(maxChProtoXOfXY == 3 && maxChProtoYOfXY == 3)
+
                 for (int i = 0; i < NCubeCT; i++)
                 {
+                    // 周りのキューブの光量が一定（0.5pe）未満ならば0をFillする
                     if (aroundPEXY[i] < DarkCutPEForCT)
                     {
                         hCrosstalkXYDarkCutEachCell[i][maxChHodo[static_cast<int> (EHodoscope::HSX2)] - 1][maxChHodo[static_cast<int> (EHodoscope::HSY2)] - 1]->Fill(0);
