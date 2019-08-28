@@ -110,9 +110,10 @@ void changestatsBoxSize(TH1* hist, double x1, double x2, double y1, double y2)
     st->SetY1NDC(y1);
     st->SetY2NDC(y2);
 }
+
 // lineColor:
 // 0:white, 1:black, 2:red, 3:green, 4:blue, 5:yellow, 6:magenta, 7:cyan, 8:dark green, 9:purple
-void drawCubeLine(string config = "", int lineColor = 7)
+void drawCubeLine(string config="", int lineColor=7)
 {
     //     const double binmin = -0.1;
     // const double binmax = 30.;
@@ -147,7 +148,7 @@ void drawCubeLine(string config = "", int lineColor = 7)
         xShift = -0.3;
         yShift = 0.7;
     }
-    else if(config == "ent")
+    else if (config == "ent")
     {
         xShift = 0;
         yShift = 0;
@@ -507,6 +508,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1                         
     const string CubeGeometryTitle[] = { "upper left", "above", "upper right", "left", "right", "lower left", "below", "lower right" };
     array<TH1D *, NCubeCT> hCrosstalkXY;
     array<TH1D *, NCubeCT> hCrosstalkXYDarkCut;
+
     array<TH1D *, NCubeCT> hPEAroundForCTXY;
     TH1D* hCrosstalkXYDarkCutEachCell[NCubeCT][NScifiEachHodo][NScifiEachHodo];
     array<TH2D *, NCubeCT> hCrosstalkXYDarkCutMap;
@@ -554,6 +556,57 @@ void run_proto(int runnum, int fileCount, int shiftHSX1                         
         histName = "hCrosstalkScatterXY" + CubeGeometryName[i];
         histAxis = (boost::format("L.Y. %s vs center (using Z readout);L.Y. center (ch8) (p.e.);L.Y. %s (ch%d) (p.e.);Number of events") % CubeGeometryTitle[i] % CubeGeometryTitle[i] % CubeChMapXY[i]).str();
         hCrosstalkScatterXY[i] = new TH2D(histName.c_str(), histAxis.c_str(), NBinCTScatter, MinCTScatter, MaxCTScatter, NBinCTScatter, MinCTScatter, MaxCTScatter);
+    }
+
+
+    // 対角のキューブのクロストーク見る用
+    const int NCubeCTDiagOpp = 4;
+    const int CubeChMapXYDiagOpp[NCubeCTDiagOpp][2] = { { 11, 24 }, { 24, 11 }, { 28, 5 }, { 5, 28 } };
+    const string CubeGeometryNameDiagOpp[] = { "LR/UL", "UL/LR", "LL/UR", "UR/LL" };
+
+    const string CubeGeometryTitleDiagOppNumera[] = { "lower right", "upper left", "lower left", "upper right" };
+    const string CubeGeometryTitleDiagOppDenomi[] = { "upper left", "lower right", "upper right", "lower left" };
+    array<TH1D *, NCubeCTDiagOpp> hCrosstalkXYDarkCutDiagOpp;   // 対角方向の2つのキューブの光量の割合
+
+    array<TH1D *, NCubeCTDiagOpp> hPEAroundForCTXYDiagOpp;
+
+    TH1D* hCrosstalkXYDarkCutEachCellDiagOpp[NCubeCTDiagOpp][NScifiEachHodo][NScifiEachHodo];
+    array<TH2D *, NCubeCTDiagOpp> hCrosstalkXYDarkCutMapDiagOpp;
+
+    array<TGraph *, NCubeCTDiagOpp> scatterCTXYDiagOpp;
+    array<TH2D *, NCubeCTDiagOpp> hCrosstalkScatterXYDiagOpp;
+    TH2D* hCrosstalkScatterXYEachCellDiagOpp[NCubeCTDiagOpp][NScifiEachHodo][NScifiEachHodo];
+
+    for (int i = 0; i < NCubeCTDiagOpp; i++)
+    {
+        histName = "hCrosstalkXY" + CubeGeometryNameDiagOpp[i] + "DarkCut";
+        histAxis = (boost::format("L.Y. ratio %1%/%2% (using Z readout, dark count cut);L.Y. %1%(ch%3%)/%2%(ch%4%);Number of events") % CubeGeometryTitleDiagOppNumera[i] % CubeGeometryTitleDiagOppDenomi[i] % CubeChMapXYDiagOpp[i][1] % CubeChMapXYDiagOpp[i][0]).str();
+        // histAxis = "L.Y. ratio " + CubeGeometryTitleDiagOppNumera[i] + " / " + CubeGeometryTitleDiagOppDenomi[i] + " (using Z readout);L.Y. " + CubeGeometryTitleDiagOppNumera[i] + "(ch" + to_string(CubeChMapXY[i][1]) + ")/" + CubeGeometryTitleDiagOppDenomi[i] + "(ch9);Number of events";
+        hCrosstalkXYDarkCutDiagOpp[i] = new TH1D(histName.c_str(), histAxis.c_str(), NBinCT, MinCT, MaxCT);
+
+        // TODO: 個別のPEのヒストグラムも作る
+
+        for (int j = 0; j < NScifiEachHodo; j++)
+        {
+            for (int k = 0; k < NScifiEachHodo; k++)
+            {
+                histName = (boost::format("hCrosstalkXY%sDarkCutX%dY%d") % CubeGeometryNameDiagOpp[i] % (j + 1) % (k + 1)).str();
+                histAxis = (boost::format("L.Y. ratio %1%/%2% (using Z readout, dark count cut, Cell X=%3% Y=%4%;L.Y. %1%(ch%5%)/%2%(ch%6%);Number of events") % CubeGeometryTitleDiagOppNumera[i] % CubeGeometryTitleDiagOppDenomi[i] % (j + 1) % (k + 1) % CubeChMapXYDiagOpp[i][1] % CubeChMapXYDiagOpp[i][0]).str();
+                hCrosstalkXYDarkCutEachCellDiagOpp[i][j][k] = new TH1D(histName.c_str(), histAxis.c_str(), NBinCT, MinCT, MaxCT);
+
+                // histName = (boost::format("hCrosstalk%sScatterXYX%dY%d") % CubeGeometryName[i] % (j + 1) % (k + 1)).str();
+                // histAxis = (boost::format("L.Y. %s vs center (using Z readout, cell X=%d Y=%d);L.Y. center (ch8) (p.e.);L.Y. %s (ch%d) (p.e.);Number of events") % CubeGeometryTitle[i] % (j + 1) % (k + 1) % CubeGeometryTitle[i] % CubeChMapXY[i]).str();
+                // hCrosstalkScatterXYEachCell[i][j][k] = new TH2D(histName.c_str(), histAxis.c_str(), NBinCTScatter, MinCTScatter, MaxCTScatter, NBinCTScatter, MinCTScatter, MaxCTScatter);
+            }
+        }
+
+        histName = (boost::format("hCrosstalkXY%sDarkCutMap") % CubeGeometryNameDiagOpp[i]).str();
+        histAxis = (boost::format("Crosstalk rate (%1%/%2%, using Z readout, dark count cut);cell # along X;cell # along Y;Crosstalk rate (%%)") % CubeGeometryTitleDiagOppNumera[i] % CubeGeometryTitleDiagOppDenomi[i]).str();
+        hCrosstalkXYDarkCutMapDiagOpp[i] = new TH2D(histName.c_str(), histAxis.c_str(), NScifiEachHodo, MinHodoMap, MaxHodoMap, NScifiEachHodo, MinHodoMap, MaxHodoMap);
+        hCrosstalkXYDarkCutMapDiagOpp[i]->SetMinimum(MinCTMap);
+        hCrosstalkXYDarkCutMapDiagOpp[i]->SetMaximum(MaxCTMap);
+
+        scatterCTXYDiagOpp[i] = new TGraph();
     }
 
     // Detection efficiency
@@ -999,10 +1052,10 @@ void run_proto(int runnum, int fileCount, int shiftHSX1                         
                 maxChHodo[static_cast<int> (EHodoscope::HSX2)] >= hodoLowXForCTCell &&
                 maxChHodo[static_cast<int> (EHodoscope::HSX2)] <= hodoHighXForCTCell &&
                 maxChHodo[static_cast<int> (EHodoscope::HSY2)] >= hodoLowYForCTCell &&
-                maxChHodo[static_cast<int> (EHodoscope::HSY2)] <= hodoHighYForCTCell &&
-                maxChProtoXOfXY == CenterCubeXOfXY &&
-                maxChProtoYOfXY == CenterCubeYOfXY
-            )
+                maxChHodo[static_cast<int> (EHodoscope::HSY2)] <= hodoHighYForCTCell //&&
+                // maxChProtoXOfXY == CenterCubeXOfXY &&
+                // maxChProtoYOfXY == CenterCubeYOfXY
+                )
             {
                 goodEventForCTCell = true;
                 countCTCell++;
@@ -1042,7 +1095,6 @@ void run_proto(int runnum, int fileCount, int shiftHSX1                         
 
 
             // セルごとのクロストーク
-            // TODO: キューブのヒット情報を用いて余計なイベントを除去する
             if (goodEventForCTCell)
             {
                 // #ifdef DEBUG
@@ -1059,20 +1111,22 @@ void run_proto(int runnum, int fileCount, int shiftHSX1                         
                 //     }
                 // #endif
 
-                if(maxChProtoXOfXY == 3 && maxChProtoYOfXY == 3)
-
-                for (int i = 0; i < NCubeCT; i++)
+                // Center cubeの光量が一番多いとき
+                if (maxChProtoXOfXY == 3 && maxChProtoYOfXY == 3)
                 {
-                    // 周りのキューブの光量が一定（0.5pe）未満ならば0をFillする
-                    if (aroundPEXY[i] < DarkCutPEForCT)
+                    for (int i = 0; i < NCubeCT; i++)
                     {
-                        hCrosstalkXYDarkCutEachCell[i][maxChHodo[static_cast<int> (EHodoscope::HSX2)] - 1][maxChHodo[static_cast<int> (EHodoscope::HSY2)] - 1]->Fill(0);
+                        // 周りのキューブの光量が一定（0.5pe）未満ならば0をFillする
+                        if (aroundPEXY[i] < DarkCutPEForCT)
+                        {
+                            hCrosstalkXYDarkCutEachCell[i][maxChHodo[static_cast<int> (EHodoscope::HSX2)] - 1][maxChHodo[static_cast<int> (EHodoscope::HSY2)] - 1]->Fill(0);
+                        }
+                        else     // if(leftPEXY*RatioCutForCT < centerPEXY)
+                        {
+                            hCrosstalkXYDarkCutEachCell[i][maxChHodo[static_cast<int> (EHodoscope::HSX2)] - 1][maxChHodo[static_cast<int> (EHodoscope::HSY2)] - 1]->Fill(aroundPEXY[i] / centerPEXY);
+                        }
+                        hCrosstalkScatterXYEachCell[i][maxChHodo[static_cast<int> (EHodoscope::HSX2)] - 1][maxChHodo[static_cast<int> (EHodoscope::HSY2)] - 1]->Fill(centerPEXY, aroundPEXY[i]);
                     }
-                    else     // if(leftPEXY*RatioCutForCT < centerPEXY)
-                    {
-                        hCrosstalkXYDarkCutEachCell[i][maxChHodo[static_cast<int> (EHodoscope::HSX2)] - 1][maxChHodo[static_cast<int> (EHodoscope::HSY2)] - 1]->Fill(aroundPEXY[i] / centerPEXY);
-                    }
-                    hCrosstalkScatterXYEachCell[i][maxChHodo[static_cast<int> (EHodoscope::HSX2)] - 1][maxChHodo[static_cast<int> (EHodoscope::HSY2)] - 1]->Fill(centerPEXY, aroundPEXY[i]);
                 }
             }
 
@@ -1613,9 +1667,6 @@ void run_proto(int runnum, int fileCount, int shiftHSX1                         
         canvas->SaveAs(figName);
         canvas->Clear();
     }
-
-
-    //
 }
 
 int main(int argc, char** argv)
