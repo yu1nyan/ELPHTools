@@ -607,6 +607,10 @@ void run_proto(int runnum, int fileCount, int shiftHSX1                         
         hCrosstalkXYDarkCutMapDiagOpp[i]->SetMaximum(MaxCTMap);
 
         scatterCTXYDiagOpp[i] = new TGraph();
+
+        histName = "hCrosstalkScatterXY" + CubeGeometryNameDiagOpp[i];
+        histAxis = (boost::format("L.Y. %1% vs %2% (using Z readout);L.Y. %1% (ch%3%) (p.e.);L.Y. %2% (ch%4%) (p.e.);Number of events") % CubeGeometryTitleDiagOppDenomi[i] % CubeGeometryTitleDiagOppNumera[i] % CubeChMapXYDiagOpp[i][0] % CubeChMapXYDiagOpp[i][1]).str();
+        hCrosstalkScatterXYDiagOpp[i] = new TH2D(histName.c_str(), histAxis.c_str(), NBinCTScatter, MinCTScatter, MaxCTScatter, NBinCTScatter, MinCTScatter, MaxCTScatter);
     }
 
     // Detection efficiency
@@ -1052,7 +1056,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1                         
                 maxChHodo[static_cast<int> (EHodoscope::HSX2)] >= hodoLowXForCTCell &&
                 maxChHodo[static_cast<int> (EHodoscope::HSX2)] <= hodoHighXForCTCell &&
                 maxChHodo[static_cast<int> (EHodoscope::HSY2)] >= hodoLowYForCTCell &&
-                maxChHodo[static_cast<int> (EHodoscope::HSY2)] <= hodoHighYForCTCell //&&
+                maxChHodo[static_cast<int> (EHodoscope::HSY2)] <= hodoHighYForCTCell // &&
                 // maxChProtoXOfXY == CenterCubeXOfXY &&
                 // maxChProtoYOfXY == CenterCubeYOfXY
                 )
@@ -1065,9 +1069,6 @@ void run_proto(int runnum, int fileCount, int shiftHSX1                         
             // ホドスコープ内側4ch×4chヒットをクロストークのヒストグラムに使う
             if (goodEventForCT)
             {
-                #ifdef DEBUG
-                    cout << "AbovePE: " << aroundPEXY[1] << endl;
-                #endif
                 for (int i = 0; i < NCubeCT; i++)
                 {
                     hCrosstalkXY[i]->Fill(aroundPEXY[i] / centerPEXY);
@@ -1075,7 +1076,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1                         
                     scatterCTXY[i]->SetPoint(countCTPoint, centerPEXY, aroundPEXY[i]);
                     hCrosstalkScatterXY[i]->Fill(centerPEXY, aroundPEXY[i]);
                     #ifdef DEBUG
-                        cout << aroundPEXY[i] << endl;
+                        cout << "aroundPEXY" << i << " = " << aroundPEXY[i] << endl;
                     #endif
 
                     if (aroundPEXY[i] < DarkCutPEForCT)
@@ -1091,6 +1092,25 @@ void run_proto(int runnum, int fileCount, int shiftHSX1                         
                 hPECenterForCTXY->Fill(centerPEXY);
 
                 countCTPoint++;
+            }
+            array<int, NCubeCTDiagOpp> countCTPointDiagOpp = {};
+            // ホドスコープ左上 4x4 ch の領域にヒット　右下/左上のクロストーク見る用
+            if (goodEvent && singleHit &&
+                maxChHodo[static_cast<int> (EHodoscope::HSX2)] >= 1 && maxChHodo[static_cast<int> (EHodoscope::HSX2)] <= 4 && maxChHodo[static_cast<int> (EHodoscope::HSY2)] >= 13 && maxChHodo[static_cast<int> (EHodoscope::HSY2)] <= 16 &&
+                maxChHodo[static_cast<int> (EHodoscope::HSX1)] >= 1 && maxChHodo[static_cast<int> (EHodoscope::HSX1)] <= 4 && maxChHodo[static_cast<int> (EHodoscope::HSY1)] >= 13 && maxChHodo[static_cast<int> (EHodoscope::HSY1)] <= 16)
+            {
+                int i = 0;
+                hCrosstalkScatterXYDiagOpp[i]->Fill(pe[static_cast<int> (EEasiroc::Scinti1)][CubeChMapXYDiagOpp[i][0]], pe[static_cast<int> (EEasiroc::Scinti1)][CubeChMapXYDiagOpp[i][1]]);
+                scatterCTXYDiagOpp[i]->SetPoint(countCTPointDiagOpp[i], pe[static_cast<int> (EEasiroc::Scinti1)][CubeChMapXYDiagOpp[i][0]], pe[static_cast<int> (EEasiroc::Scinti1)][CubeChMapXYDiagOpp[i][1]]);
+                if(pe[static_cast<int> (EEasiroc::Scinti1)][CubeChMapXYDiagOpp[i][1]] < DarkCutPEForCT)
+                {
+                    hCrosstalkXYDarkCutDiagOpp[i]->Fill(0);
+                }
+                else
+                {
+                    hCrosstalkXYDarkCutDiagOpp[i]->Fill(pe[static_cast<int> (EEasiroc::Scinti1)][CubeChMapXYDiagOpp[i][1]]/pe[static_cast<int> (EEasiroc::Scinti1)][CubeChMapXYDiagOpp[i][0]]);
+                }
+                countCTPointDiagOpp[i]++;
             }
 
 
@@ -1126,6 +1146,40 @@ void run_proto(int runnum, int fileCount, int shiftHSX1                         
                             hCrosstalkXYDarkCutEachCell[i][maxChHodo[static_cast<int> (EHodoscope::HSX2)] - 1][maxChHodo[static_cast<int> (EHodoscope::HSY2)] - 1]->Fill(aroundPEXY[i] / centerPEXY);
                         }
                         hCrosstalkScatterXYEachCell[i][maxChHodo[static_cast<int> (EHodoscope::HSX2)] - 1][maxChHodo[static_cast<int> (EHodoscope::HSY2)] - 1]->Fill(centerPEXY, aroundPEXY[i]);
+                    }
+                }
+
+                // 四隅のいずれかのキューブの光量が最大
+                if((maxChProtoXOfXY == 2 || maxChProtoXOfXY == 4) && (maxChProtoYOfXY == 2 || maxChProtoYOfXY == 4))
+                {
+                    int i;
+                    // 左上のキューブの光量が最大
+                    if (maxChProtoXOfXY == 2 && maxChProtoYOfXY == 4)
+                    {
+                        i = 0;
+                    }
+                    // 右下
+                    else if (maxChProtoXOfXY == 4 && maxChProtoYOfXY == 2)
+                    {
+                        i = 1;
+                    }
+                    // それ以外ならスキップ
+                    else
+                    {
+                        i = -1;
+                    }
+
+                    if(i >= 0)
+                    {
+                        if(pe[static_cast<int> (EEasiroc::Scinti1)][CubeChMapXYDiagOpp[i][1]] < DarkCutPEForCT)
+                        {
+                            hCrosstalkXYDarkCutEachCellDiagOpp[0][maxChHodo[static_cast<int> (EHodoscope::HSX2)] - 1][maxChHodo[static_cast<int> (EHodoscope::HSY2)] - 1]->Fill(0);
+                        }
+                        else
+                        {
+                            hCrosstalkXYDarkCutEachCellDiagOpp[0][maxChHodo[static_cast<int> (EHodoscope::HSX2)] - 1][maxChHodo[static_cast<int> (EHodoscope::HSY2)] - 1]->Fill(pe[static_cast<int> (EEasiroc::Scinti1)][CubeChMapXYDiagOpp[i][1]] / pe[static_cast<int> (EEasiroc::Scinti1)][CubeChMapXYDiagOpp[i][0]]);
+                        }
+                        // hCrosstalkScatterXYEachCellDiagOpp[0][maxChHodo[static_cast<int> (EHodoscope::HSX2)] - 1][maxChHodo[static_cast<int> (EHodoscope::HSY2)] - 1]->Fill(pe[static_cast<int> (EEasiroc::Scinti1)][CubeChMapXYDiagOpp[i][0]], pe[static_cast<int> (EEasiroc::Scinti1)][CubeChMapXYDiagOpp[i][1]]);
                     }
                 }
             }
