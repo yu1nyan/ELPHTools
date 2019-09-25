@@ -40,7 +40,7 @@ using namespace std;
 
 
 // EASIROCのチャンネルとホドスコープの位置・チャンネルの対応
-tuple<EHodoscope, int> ToHodoscopeCh(int easirocCh, int shiftXup                                                    =0, int shiftYup=0, int shiftYDown=0, int shiftXDown=0)
+tuple<EHodoscope, int> ToHodoscopeCh(int easirocCh, int shiftXup=0, int shiftYup=0, int shiftYDown=0, int shiftXDown=0)
 {
     if (easirocCh >= 0 && easirocCh <= 15 && easirocCh - shiftXup >= 0 && easirocCh - shiftXup <= 15)
     {
@@ -66,7 +66,7 @@ tuple<EHodoscope, int> ToHodoscopeCh(int easirocCh, int shiftXup                
     return forward_as_tuple(EHodoscope::None, 0);
 }
 
-bool isGap(int hodoX, int hodoY, int protoX, int shiftX              =0, int shiftY=0)
+bool isGap(int hodoX, int hodoY, int protoX, int shiftX=0, int shiftY=0)
 {
     if (protoX == 3 && !(hodoX + shiftX >= 6 && hodoX + shiftX <= 11 && hodoY + shiftY >= 6 && hodoY + shiftY <= 11))
     {
@@ -104,7 +104,7 @@ bool isGap(int hodoX, int hodoY, int protoX, int shiftX              =0, int shi
 void changestatsBoxSize(TH1* hist, double x1, double x2, double y1, double y2)
 {
     gPad->Update();
-    TPaveStats* st = (TPaveStats *) hist->FindObject("stats");
+    TPaveStats* st = (TPaveStats*) hist->FindObject("stats");
     st->SetX1NDC(x1);
     st->SetX2NDC(x2);
     st->SetY1NDC(y1);
@@ -215,7 +215,7 @@ void drawCubeLine(string config="", int lineColor=7)
     circle->Draw();
 }
 
-void run_proto(int runnum, int fileCount, int shiftHSX1                                                   =0, int shiftHSY1=0, int shiftHSY2=0, int shiftHSX2=0, int min_evt=-1, int max_evt=-1, string outputFileType="png", int gap_point_0=0, int gap_pt2s_0=0, int gap_pt1s_0=0, int gap_hs_0=0, int gap_point_1=0, int gap_pt2s_1=0, int gap_pt1s_1=0, int gap_hs_1=0)
+void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int shiftHSY2=0, int shiftHSX2=0, int min_evt=-1, int max_evt=-1, string outputFileType="png", int gap_point_0=0, int gap_pt2s_0=0, int gap_pt1s_0=0, int gap_hs_0=0, int gap_point_1=0, int gap_pt2s_1=0, int gap_pt1s_1=0, int gap_hs_1=0)
 {
     // constants
     gErrorIgnoreLevel = kError;
@@ -504,17 +504,17 @@ void run_proto(int runnum, int fileCount, int shiftHSX1                         
     // 3 x 4
     // 5 6 7
     const int CubeChMapXY[] = { 11, 12, 28, 8, 26, 5, 6, 24 };
-    const string CubeGeometryName[] = { "UpperLeft", "Above", "UpperRight", "Left", "Right", "LowerLeft", "Below", "LowerRight" };
-    const string CubeGeometryTitle[] = { "upper left", "above", "upper right", "left", "right", "lower left", "below", "lower right" };
-    array<TH1D *, NCubeCT> hCrosstalkXY;
-    array<TH1D *, NCubeCT> hCrosstalkXYDarkCut;
+    const string CubeGeometryName[] = { "UpperLeft", "Upper", "UpperRight", "Left", "Right", "LowerLeft", "Lower", "LowerRight" };
+    const string CubeGeometryTitle[] = { "upper left", "upper", "upper right", "left", "right", "lower left", "lower", "lower right" };
+    array<TH1D*, NCubeCT> hCrosstalkXY;
+    array<TH1D*, NCubeCT> hCrosstalkXYDarkCut;
 
-    array<TH1D *, NCubeCT> hPEAroundForCTXY;
+    array<TH1D*, NCubeCT> hPEAroundForCTXY;
     TH1D* hCrosstalkXYDarkCutEachCell[NCubeCT][NScifiEachHodo][NScifiEachHodo];
-    array<TH2D *, NCubeCT> hCrosstalkXYDarkCutMap;
+    array<TH2D*, NCubeCT> hCrosstalkXYDarkCutMap;
 
-    array<TGraph *, NCubeCT> scatterCTXY;
-    array<TH2D *, NCubeCT> hCrosstalkScatterXY;
+    array<TGraph*, NCubeCT> scatterCTXY;
+    array<TH2D*, NCubeCT> hCrosstalkScatterXY;
     TH2D* hCrosstalkScatterXYEachCell[NCubeCT][NScifiEachHodo][NScifiEachHodo];
     for (int i = 0; i < NCubeCT; ++i)
     {
@@ -546,7 +546,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1                         
         }
 
         histName = (boost::format("hCrosstalkXY%sDarkCutMap") % CubeGeometryName[i]).str();
-        histAxis = (boost::format("Crosstalk rate (%s, using Z readout, dark count cut);cell # along X;cell # along Y;Crosstalk rate (%%)") % CubeGeometryTitle[i]).str();
+        histAxis = (boost::format("Crosstalk ratio (%s, using Z readout, dark count cut);cell # along X;cell # along Y;Crosstalk ratio (%%)") % CubeGeometryTitle[i]).str();
         hCrosstalkXYDarkCutMap[i] = new TH2D(histName.c_str(), histAxis.c_str(), NScifiEachHodo, MinHodoMap, MaxHodoMap, NScifiEachHodo, MinHodoMap, MaxHodoMap);
         hCrosstalkXYDarkCutMap[i]->SetMinimum(MinCTMap);
         hCrosstalkXYDarkCutMap[i]->SetMaximum(MaxCTMap);
@@ -566,15 +566,15 @@ void run_proto(int runnum, int fileCount, int shiftHSX1                         
 
     const string CubeGeometryTitleDiagOppNumera[] = { "lower right", "upper left", "lower left", "upper right" };
     const string CubeGeometryTitleDiagOppDenomi[] = { "upper left", "lower right", "upper right", "lower left" };
-    array<TH1D *, NCubeCTDiagOpp> hCrosstalkXYDarkCutDiagOpp;   // 対角方向の2つのキューブの光量の割合
+    array<TH1D*, NCubeCTDiagOpp> hCrosstalkXYDarkCutDiagOpp;   // 対角方向の2つのキューブの光量の割合
 
-    array<TH1D *, NCubeCTDiagOpp> hPEAroundForCTXYDiagOpp;
+    array<TH1D*, NCubeCTDiagOpp> hPEAroundForCTXYDiagOpp;
 
     TH1D* hCrosstalkXYDarkCutEachCellDiagOpp[NCubeCTDiagOpp][NScifiEachHodo][NScifiEachHodo];
-    array<TH2D *, NCubeCTDiagOpp> hCrosstalkXYDarkCutMapDiagOpp;
+    array<TH2D*, NCubeCTDiagOpp> hCrosstalkXYDarkCutMapDiagOpp;
 
-    array<TGraph *, NCubeCTDiagOpp> scatterCTXYDiagOpp;
-    array<TH2D *, NCubeCTDiagOpp> hCrosstalkScatterXYDiagOpp;
+    array<TGraph*, NCubeCTDiagOpp> scatterCTXYDiagOpp;
+    array<TH2D*, NCubeCTDiagOpp> hCrosstalkScatterXYDiagOpp;
     TH2D* hCrosstalkScatterXYEachCellDiagOpp[NCubeCTDiagOpp][NScifiEachHodo][NScifiEachHodo];
 
     for (int i = 0; i < NCubeCTDiagOpp; i++)
@@ -601,7 +601,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1                         
         }
 
         histName = (boost::format("hCrosstalkXY%sDarkCutMap") % CubeGeometryNameDiagOpp[i]).str();
-        histAxis = (boost::format("Crosstalk rate (%1%/%2%, using Z readout, dark count cut);cell # along X;cell # along Y;Crosstalk rate (%%)") % CubeGeometryTitleDiagOppNumera[i] % CubeGeometryTitleDiagOppDenomi[i]).str();
+        histAxis = (boost::format("Crosstalk ratio (%1%/%2%, using Z readout, dark count cut);cell # along X;cell # along Y;Crosstalk ratio (%%)") % CubeGeometryTitleDiagOppNumera[i] % CubeGeometryTitleDiagOppDenomi[i]).str();
         hCrosstalkXYDarkCutMapDiagOpp[i] = new TH2D(histName.c_str(), histAxis.c_str(), NScifiEachHodo, MinHodoMap, MaxHodoMap, NScifiEachHodo, MinHodoMap, MaxHodoMap);
         hCrosstalkXYDarkCutMapDiagOpp[i]->SetMinimum(MinCTMap);
         hCrosstalkXYDarkCutMapDiagOpp[i]->SetMaximum(MaxCTMap);
@@ -1098,7 +1098,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1                         
 
                 countCTPoint++;
             }
-            array<int, NCubeCTDiagOpp> countCTPointDiagOpp = {};
+            array<int, NCubeCTDiagOpp> countCTPointDiagOpp = { };
             // ホドスコープ左上 4x4 ch の領域にヒット　右下/左上のクロストーク見る用
             if (goodEvent && singleHit &&
                 maxChHodo[static_cast<int> (EHodoscope::HSX2)] >= 1 && maxChHodo[static_cast<int> (EHodoscope::HSX2)] <= 4 && maxChHodo[static_cast<int> (EHodoscope::HSY2)] >= 13 && maxChHodo[static_cast<int> (EHodoscope::HSY2)] <= 16 &&
@@ -1107,13 +1107,13 @@ void run_proto(int runnum, int fileCount, int shiftHSX1                         
                 int i = 0;
                 hCrosstalkScatterXYDiagOpp[i]->Fill(pe[static_cast<int> (EEasiroc::Scinti1)][CubeChMapXYDiagOpp[i][0]], pe[static_cast<int> (EEasiroc::Scinti1)][CubeChMapXYDiagOpp[i][1]]);
                 scatterCTXYDiagOpp[i]->SetPoint(countCTPointDiagOpp[i], pe[static_cast<int> (EEasiroc::Scinti1)][CubeChMapXYDiagOpp[i][0]], pe[static_cast<int> (EEasiroc::Scinti1)][CubeChMapXYDiagOpp[i][1]]);
-                if(pe[static_cast<int> (EEasiroc::Scinti1)][CubeChMapXYDiagOpp[i][1]] < DarkCutPEForCT)
+                if (pe[static_cast<int> (EEasiroc::Scinti1)][CubeChMapXYDiagOpp[i][1]] < DarkCutPEForCT)
                 {
                     hCrosstalkXYDarkCutDiagOpp[i]->Fill(0);
                 }
                 else
                 {
-                    hCrosstalkXYDarkCutDiagOpp[i]->Fill(pe[static_cast<int> (EEasiroc::Scinti1)][CubeChMapXYDiagOpp[i][1]]/pe[static_cast<int> (EEasiroc::Scinti1)][CubeChMapXYDiagOpp[i][0]]);
+                    hCrosstalkXYDarkCutDiagOpp[i]->Fill(pe[static_cast<int> (EEasiroc::Scinti1)][CubeChMapXYDiagOpp[i][1]] / pe[static_cast<int> (EEasiroc::Scinti1)][CubeChMapXYDiagOpp[i][0]]);
                 }
                 countCTPointDiagOpp[i]++;
             }
@@ -1155,7 +1155,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1                         
                 }
 
                 // 四隅のいずれかのキューブの光量が最大
-                if((maxChProtoXOfXY == 2 || maxChProtoXOfXY == 4) && (maxChProtoYOfXY == 2 || maxChProtoYOfXY == 4))
+                if ((maxChProtoXOfXY == 2 || maxChProtoXOfXY == 4) && (maxChProtoYOfXY == 2 || maxChProtoYOfXY == 4))
                 {
                     int i;
                     // 左上のキューブの光量が最大
@@ -1174,9 +1174,9 @@ void run_proto(int runnum, int fileCount, int shiftHSX1                         
                         i = -1;
                     }
 
-                    if(i >= 0)
+                    if (i >= 0)
                     {
-                        if(pe[static_cast<int> (EEasiroc::Scinti1)][CubeChMapXYDiagOpp[i][1]] < DarkCutPEForCT)
+                        if (pe[static_cast<int> (EEasiroc::Scinti1)][CubeChMapXYDiagOpp[i][1]] < DarkCutPEForCT)
                         {
                             hCrosstalkXYDarkCutEachCellDiagOpp[0][maxChHodo[static_cast<int> (EHodoscope::HSX2)] - 1][maxChHodo[static_cast<int> (EHodoscope::HSY2)] - 1]->Fill(0);
                         }
@@ -1434,6 +1434,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1                         
         // gStyle->SetOptFit(111);
         changestatsBoxSize(hCrosstalkXYDarkCut[i], 0.7, 0.99, 0.65, 0.935);
         figName = TString::Format("%sCrosstalkDarkCut%d_%04d_%04d.%s", ResultDir.c_str(), i, runnum, subrun, outputFileType.c_str());
+        canvas->SetLogy();
         canvas->SaveAs(figName);
         canvas->Clear();
     }
