@@ -980,8 +980,8 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
                 countCTDownOnly++;
             }
 
-            // goodEventForCT = goodEventForCTStraight;
-            goodEventForCT = goodEventForCTUpDown;
+            goodEventForCT = goodEventForCTStraight;
+            // goodEventForCT = goodEventForCTUpDown;
 
             // CellごとのCross talk分布出す用
             if (isStraightBeam &&
