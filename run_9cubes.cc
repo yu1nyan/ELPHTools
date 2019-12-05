@@ -80,26 +80,39 @@ bool isGap(int hodoX, int hodoY, int protoX, int shiftX=0, int shiftY=0)
     return false;
 }
 
-// ヒストグラム出力関数
-// クラスとして作ったほうが良い：Divideする場合の処理が複雑・引数が複数パターン取れそう（1個のヒストをDrawするときはTH1*、1個以上のときはTH1**を渡さなければならないなど）
-// void OutputTH1(TH1* hist, TString figName, int nHistHorizontal, int nHistVertical, int int histWidth = 800, int histHeight = 600)
-// {
-//     // error
-//     if(nHistVertical <= 0 || nHistHorizontal <= 0) return;
-//
-//     TCanvas canvas = new TCanvas("canvas", "", histWidth * nHistHorizontal, histHeight * nHistVertical);
-//     if(nHistHorizontal != 1 && nHistVertical != 1)
-//     {
-//         canvas->Divide(nHistHorizontal, nHistVertical);
-//     }
-//     canvas->cd(1);
-//     hCrosstalkXY->Draw();
-//     canvas->cd(2);
-//     hCrosstalkXZ->Draw();
-//     figName = TString::Format("%sCrosstalk_%04d_%04d.%s", ResultDir.c_str(), runnum, subrun, outputFileType.c_str());
-//     canvas->SaveAs(figName);
-//     canvas->Clear();
-// }
+void SaveHist(TH1* hist, TString outputFileDir, TString drawOption = "", bool setLogy = false, int histWidth = 0, int histHeight = 0)
+{
+    TCanvas* canvas;
+    if (histWidth == 0 || histHeight == 0)
+    {
+        canvas = new TCanvas();
+    }
+    else
+    {
+        canvas = new TCanvas("canvas", "", histWidth, histHeight);
+    }
+
+    if (setLogy)
+    {
+        canvas->SetLogy();
+    }
+    hist->Draw(drawOption);
+    canvas->SaveAs(outputFileDir);
+    canvas->Clear();
+}
+
+void SaveHodoMap(TH2* hist, TString outputFileDir, int nCellOneSide)
+{
+    TCanvas* canvas = new TCanvas("canvas", "", 1280, 1200);
+    hist->Draw("text colz");
+    hist->GetXaxis()->SetNdivisions(nCellOneSide);
+    hist->GetYaxis()->SetNdivisions(nCellOneSide);
+    gPad->SetRightMargin(0.17);
+    hist->GetZaxis()->SetTitleOffset(1.4);
+    hist->SetStats(kFALSE);
+    canvas->SaveAs(outputFileDir);
+    canvas->Clear();
+}
 
 void changestatsBoxSize(TH1* hist, double x1, double x2, double y1, double y2)
 {
@@ -408,9 +421,9 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
     }
 
     TH1D* hPEProto[NSurfaceScinti];
-    const double MinPEProto = 0.;
-    const double MaxPEProto = 80.;
-    const int NBinPEProto = 80;
+    const double MinPEProto = -0.5;
+    const double MaxPEProto = 9.5;
+    const int NBinPEProto = 10;
     for (int i = 0; i < NSurfaceScinti; i++)
     {
         histName = "hPE" + SurfaceName[i];
@@ -434,7 +447,8 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
 
     TH1D* hPEProtoEach[NSurfaceScinti][NChOneSide][NChOneSide];
 
-    vector<tuple<EEasiroc, int, EScintiSurface, int, int>> usingProtoCh;     // 使用チャンネルを格納 <EASIROC ch, プロトタイプ面, cube # horizontal, cube # vertical>
+    vector<tuple<EEasiroc, int, EScintiSurface, int, int>> usingProtoCh;    // 使用チャンネルを格納 <EASIROC ch, プロトタイプ面, cube # horizontal, cube # vertical>
+    vector<tuple<EEasiroc, int, EScintiSurface, int, int>> usingProtoChForAllOutput;
     for (int i = 0; i < NEasiroc - 1; i++)
     {
         EEasiroc easiroc;
@@ -444,19 +458,28 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
             easiroc = EEasiroc::Scinti1;
 
         ToScintiCh* toScintiCh = new ToScintiCh(EScintiType::NineCubes);
+        ToScintiCh* toScintiCh555 = new ToScintiCh(EScintiType::Proto555);
 
 
         for (int ch = 0; ch < NChEasiroc; ch++)
         {
-            if (toScintiCh->isConnected(easiroc, ch))
+            if(toScintiCh->isConnected(easiroc, ch))
             {
                 tuple<EScintiSurface, int, int> scintiCh = toScintiCh->getCh(easiroc, ch);
+                EScintiSurface surface = get<0> (scintiCh);
+                int horizontal = get<1> (scintiCh);
+                int vertical = get<2> (scintiCh);
+                usingProtoCh.push_back(forward_as_tuple(easiroc, ch, surface, horizontal, vertical));
+            }
+            if(toScintiCh555->isConnected(easiroc, ch))
+            {
+                tuple<EScintiSurface, int, int> scintiCh = toScintiCh555->getCh(easiroc, ch);
 
                 EScintiSurface surface = get<0> (scintiCh);
                 int horizontal = get<1> (scintiCh);
                 int vertical = get<2> (scintiCh);
 
-                usingProtoCh.push_back(forward_as_tuple(easiroc, ch, surface, horizontal, vertical));
+                usingProtoChForAllOutput.push_back(forward_as_tuple(easiroc, ch, surface, horizontal, vertical));
 
                 histName = "hPE";
                 histAxis = "PE ";
@@ -1000,6 +1023,25 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
             // Good event ここまで
 
 
+            // 使用していないチャンネルの光量も出力
+            if(isStraightBeam)
+            {
+                for(auto ch : usingProtoChForAllOutput)
+                {
+                    EEasiroc easiroc = get<0> (ch);
+                    int easirocCh = get<1> (ch);
+                    EScintiSurface surface = get<2> (ch);
+                    int horizontal = get<3> (ch);
+                    int vertical = get<4> (ch);
+
+                    pe[static_cast<int> (easiroc)][easirocCh] = (double(adc[static_cast<int> (easiroc)][easirocCh]) - mean_ped[static_cast<int> (easiroc)][easirocCh]) / gain[static_cast<int> (easiroc)][easirocCh];
+                    // cout << pe[static_cast<int> (easiroc)][easirocCh] << endl;
+
+                    hPEProtoEach[static_cast<int> (surface)][horizontal][vertical]->Fill(pe[static_cast<int> (easiroc)][easirocCh]);
+                }
+            }
+
+
             // prototype loop
             for (auto itr = usingProtoCh.begin(); itr != usingProtoCh.end(); ++itr)
             {
@@ -1011,18 +1053,17 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
                 #ifdef DEBUG
                     cout << "usingProtoCh: " << easirocCh << endl;
                 #endif
-                pe[static_cast<int> (easiroc)][easirocCh] = (double(adc[static_cast<int> (easiroc)][easirocCh]) - mean_ped[static_cast<int> (easiroc)][easirocCh]) / gain[static_cast<int> (easiroc)][easirocCh];
+                // pe[static_cast<int> (easiroc)][easirocCh] = (double(adc[static_cast<int> (easiroc)][easirocCh]) - mean_ped[static_cast<int> (easiroc)][easirocCh]) / gain[static_cast<int> (easiroc)][easirocCh];
                 // pe[static_cast <int>(easiroc)][easirocCh] = double(floor(pe[static_cast <int>(easiroc)][easirocCh] * 10) / 10);
 
                 hProto[static_cast<int> (surface)]->SetBinContent(horizontal, vertical, pe[static_cast<int> (easiroc)][easirocCh]);
-
 
 
                 if (pe[static_cast<int> (easiroc)][easirocCh] > ProtoPEThreshold)
                 {
                     hHitRateProto[static_cast<int> (surface)]->Fill(horizontal, vertical);
                     hPEProto[static_cast<int> (surface)]->Fill(pe[static_cast<int> (easiroc)][easirocCh]);
-                    hPEProtoEach[static_cast<int> (surface)][horizontal][vertical]->Fill(pe[static_cast<int> (easiroc)][easirocCh]);
+                    // hPEProtoEach[static_cast<int> (surface)][horizontal][vertical]->Fill(pe[static_cast<int> (easiroc)][easirocCh]);
 
                     // scintiHit = true;
 
@@ -1050,6 +1091,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
                     }
                 }
             }
+
 
             // プロトタイプの読み出し面ごとのgood event数
             for (int i = 0; i < NSurfaceScinti; i++)
@@ -1350,7 +1392,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
 
 
     // Light yield (each prototype channel)
-    for (auto itr = usingProtoCh.begin(); itr != usingProtoCh.end(); ++itr)
+    for (auto itr = usingProtoChForAllOutput.begin(); itr != usingProtoChForAllOutput.end(); ++itr)
     {
         EEasiroc easiroc = get<0> (*itr);
         int easirocCh = get<1> (*itr);
@@ -1372,7 +1414,9 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
             chName = "XZ=(" + to_string(horizontal) + "," + to_string(vertical) + ")";
         }
 
+
         canvas = new TCanvas();
+        // gPad->SetLogy();
         hPEProtoEach[static_cast<int> (surface)][horizontal][vertical]->Draw();
 
         figName = TString::Format("%sPE_%s_%04d_%04d.%s", ScintiPEDir.c_str(), chName.c_str(), runnum, subrun, outputFileType.c_str());

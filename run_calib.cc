@@ -216,7 +216,7 @@ void run_calib(string type, int nrun, int nsub, int file_count, int low, int hig
                 #ifdef DEBUG
                     cout << "ch" << ch << " is skipped" << endl;
                 #endif
-                continue;
+                // continue;
             }
             //  c1->cd(ch+1);
             hname = TString::Format("h1_%d", ch);
@@ -345,7 +345,7 @@ void run_calib(string type, int nrun, int nsub, int file_count, int low, int hig
         {
             if (!toScintiCh->isConnected(easiroc, n) && easiroc != EEasiroc::Hodoscope)
             {
-                continue;
+                // continue;
             }
             h2_2->Fill(gain[n]);
         }
@@ -358,7 +358,7 @@ void run_calib(string type, int nrun, int nsub, int file_count, int low, int hig
         {
             if (!toScintiCh->isConnected(easiroc, n) && easiroc != EEasiroc::Hodoscope)
             {
-                continue;
+                // continue;
             }
             h2_1->Fill(gain[n]);
         }
@@ -384,7 +384,7 @@ void run_calib(string type, int nrun, int nsub, int file_count, int low, int hig
         {
             if (!toScintiCh->isConnected(easiroc, n) && easiroc != EEasiroc::Hodoscope)
             {
-                continue;
+                // continue;
             }
             h3_2->Fill(mean_ped[n]);
         }
@@ -397,7 +397,7 @@ void run_calib(string type, int nrun, int nsub, int file_count, int low, int hig
         {
             if (!toScintiCh->isConnected(easiroc, n) && easiroc != EEasiroc::Hodoscope)
             {
-                continue;
+                // continue;
             }
             h3_1->Fill(mean_ped[n]);
         }
@@ -423,7 +423,7 @@ void run_calib(string type, int nrun, int nsub, int file_count, int low, int hig
         {
             if (!toScintiCh->isConnected(easiroc, n) && easiroc != EEasiroc::Hodoscope)
             {
-                continue;
+                // continue;
             }
             h4_2->Fill(mean_1pe[n]);
         }
@@ -436,7 +436,7 @@ void run_calib(string type, int nrun, int nsub, int file_count, int low, int hig
         {
             if (!toScintiCh->isConnected(easiroc, n) && easiroc != EEasiroc::Hodoscope)
             {
-                continue;
+                // continue;
             }
             h4_1->Fill(mean_1pe[n]);
         }
@@ -462,7 +462,7 @@ void run_calib(string type, int nrun, int nsub, int file_count, int low, int hig
         {
             if (!toScintiCh->isConnected(easiroc, n) && easiroc != EEasiroc::Hodoscope)
             {
-                continue;
+                // continue;
             }
             h5_2->Fill(sigma_ped[n]);
         }
@@ -475,7 +475,7 @@ void run_calib(string type, int nrun, int nsub, int file_count, int low, int hig
         {
             if (!toScintiCh->isConnected(easiroc, n) && easiroc != EEasiroc::Hodoscope)
             {
-                continue;
+                // continue;
             }
             h5_1->Fill(sigma_ped[n]);
         }
@@ -501,7 +501,7 @@ void run_calib(string type, int nrun, int nsub, int file_count, int low, int hig
         {
             if (!toScintiCh->isConnected(easiroc, n) && easiroc != EEasiroc::Hodoscope)
             {
-                continue;
+                // continue;
             }
             h6_2->Fill(sigma_1pe[n]);
         }
@@ -514,7 +514,7 @@ void run_calib(string type, int nrun, int nsub, int file_count, int low, int hig
         {
             if (!toScintiCh->isConnected(easiroc, n) && easiroc != EEasiroc::Hodoscope)
             {
-                continue;
+                // continue;
             }
             h6_1->Fill(sigma_1pe[n]);
         }
@@ -540,7 +540,7 @@ void run_calib(string type, int nrun, int nsub, int file_count, int low, int hig
         {
             if (!toScintiCh->isConnected(easiroc, n) && easiroc != EEasiroc::Hodoscope)
             {
-                continue;
+                // continue;
             }
             h7_1->Fill(chi2_ndf_ped[n]);
         }
@@ -553,7 +553,7 @@ void run_calib(string type, int nrun, int nsub, int file_count, int low, int hig
         {
             if (!toScintiCh->isConnected(easiroc, n) && easiroc != EEasiroc::Hodoscope)
             {
-                continue;
+                // continue;
             }
             h7_2->Fill(chi2_ndf_ped[n]);
         }
@@ -579,7 +579,7 @@ void run_calib(string type, int nrun, int nsub, int file_count, int low, int hig
         {
             if (!toScintiCh->isConnected(easiroc, n) && easiroc != EEasiroc::Hodoscope)
             {
-                continue;
+                // continue;
             }
             h8_2->Fill(chi2_ndf_1pe[n]);
         }
@@ -592,7 +592,7 @@ void run_calib(string type, int nrun, int nsub, int file_count, int low, int hig
         {
             if (!toScintiCh->isConnected(easiroc, n) && easiroc != EEasiroc::Hodoscope)
             {
-                continue;
+                // continue;
             }
             h8_1->Fill(chi2_ndf_1pe[n]);
         }
@@ -615,15 +615,15 @@ void run_calib(string type, int nrun, int nsub, int file_count, int low, int hig
         ofstream outputfile(out);
         for (int n = 0; n < 64; n++)
         {
-            if (!toScintiCh->isConnected(easiroc, n) && easiroc != EEasiroc::Hodoscope)
-            {
-                outputfile << n << " 0 0 0 0 0 0 0" << endl;
-            }
-            else
-            {
+        //     if (!toScintiCh->isConnected(easiroc, n) && easiroc != EEasiroc::Hodoscope)
+        //     {
+        //         outputfile << n << " 0 0 0 0 0 0 0" << endl;
+        //     }
+        //     else
+            // {
                 outputfile << n << " " << mean_ped[n] << " " << sigma_ped[n] << " " << chi2_ndf_ped[n] << " " << mean_1pe[n] << " " << sigma_1pe[n] << " " << chi2_ndf_1pe[n] << " " << gain[n] << endl;
                 delete h1[n];
-            }
+            // }
         }
         delete h2_1; delete h2_2; delete h3_1; delete h3_2; delete h4_1; delete h4_2;
         delete h5_1; delete h5_2; delete h6_1; delete h6_2; delete h7_1; delete h7_2;
