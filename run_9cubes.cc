@@ -306,7 +306,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
     time_t rawTime = time(nullptr);
     struct tm timeInfo = *localtime(&rawTime);
     string dateTimeStr = to_string(timeInfo.tm_sec + 100 * timeInfo.tm_min + 10000 * timeInfo.tm_hour + 1000000 * timeInfo.tm_mday + 100000000 * (timeInfo.tm_mon + 1) + 10000000000 * (1900 + timeInfo.tm_year));
-    resultDirTemp += dateTimeStr + "/";
+    // resultDirTemp += dateTimeStr + "/";
 
     const string ResultDir = resultDirTemp;
     const string ScintiPEDir = ResultDir + "scintiPEEachCh/";
@@ -421,9 +421,9 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
     }
 
     TH1D* hPEProto[NSurfaceScinti];
-    const double MinPEProto = -0.5;
-    const double MaxPEProto = 9.5;
-    const int NBinPEProto = 10;
+    const double MinPEProto = 2.5;
+    const double MaxPEProto = 89.5;
+    const int NBinPEProto = 92;
     for (int i = 0; i < NSurfaceScinti; i++)
     {
         histName = "hPE" + SurfaceName[i];
@@ -480,6 +480,9 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
                 int vertical = get<2> (scintiCh);
 
                 usingProtoChForAllOutput.push_back(forward_as_tuple(easiroc, ch, surface, horizontal, vertical));
+                if(horizontal == 0 || vertical == 0)
+                    continue;
+                // cout << horizontal << ", " << vertical << endl;
 
                 histName = "hPE";
                 histAxis = "PE ";
@@ -499,7 +502,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
                     histAxis += "X=" + to_string(horizontal) + " Z=" + to_string(vertical) + ";Light yield (p.e.);Number of events";
                 }
 
-                hPEProtoEach[static_cast<int> (surface)][horizontal][vertical] = new TH1D(histName.c_str(), histAxis.c_str(), NBinPEProto, MinPEProto, MaxPEProto);
+                hPEProtoEach[static_cast<int> (surface)][horizontal-1][vertical-1] = new TH1D(histName.c_str(), histAxis.c_str(), 10, -1.5, 8.5);
 
                 #ifdef DEBUG
                     cout << histName << " created." << endl;
@@ -1037,7 +1040,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
                     pe[static_cast<int> (easiroc)][easirocCh] = (double(adc[static_cast<int> (easiroc)][easirocCh]) - mean_ped[static_cast<int> (easiroc)][easirocCh]) / gain[static_cast<int> (easiroc)][easirocCh];
                     // cout << pe[static_cast<int> (easiroc)][easirocCh] << endl;
 
-                    hPEProtoEach[static_cast<int> (surface)][horizontal][vertical]->Fill(pe[static_cast<int> (easiroc)][easirocCh]);
+                    hPEProtoEach[static_cast<int> (surface)][horizontal-1][vertical-1]->Fill(pe[static_cast<int> (easiroc)][easirocCh]);
                 }
             }
 
@@ -1309,8 +1312,8 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
 
     int nHistHori = 4;
     int nHistVert = 2;
-    int histWidth = 1600;
-    int histHeight = 1200;
+    int histWidth = 800;
+    int histHeight = 600;
 
     array<int, NHodo> hodoHistOrder = { 5, 1, 4, 8 };
     array<int, NSurfaceScinti> protoHistOrder = { 3, 2, 7 };
@@ -1355,7 +1358,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
         hHitRateProto[i]->Draw("text colz");
     }
 
-    figName = TString::Format("%shitRate_%04d_%04d.%s", ResultDir.c_str(), runnum, subrun, outputFileType.c_str());
+    figName = TString::Format("%s/HitRate_%04d_%04d.%s", ResultDir.c_str(), runnum, subrun, outputFileType.c_str());
     canvas->SaveAs(figName);
     canvas->Clear();
 
@@ -1417,7 +1420,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
 
         canvas = new TCanvas();
         // gPad->SetLogy();
-        hPEProtoEach[static_cast<int> (surface)][horizontal][vertical]->Draw();
+        hPEProtoEach[static_cast<int> (surface)][horizontal-1][vertical-1]->Draw();
 
         figName = TString::Format("%sPE_%s_%04d_%04d.%s", ScintiPEDir.c_str(), chName.c_str(), runnum, subrun, outputFileType.c_str());
         canvas->SaveAs(figName);
