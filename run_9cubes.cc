@@ -293,7 +293,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
     time_t rawTime = time(nullptr);
     struct tm timeInfo = *localtime(&rawTime);
     string dateTimeStr = to_string(timeInfo.tm_sec + 100 * timeInfo.tm_min + 10000 * timeInfo.tm_hour + 1000000 * timeInfo.tm_mday + 100000000 * (timeInfo.tm_mon + 1) + 10000000000 * (1900 + timeInfo.tm_year));
-    // resultDirTemp += dateTimeStr + "/";
+    resultDirTemp += dateTimeStr + "/";
 
     const string ResultDir = resultDirTemp;
     const string ScintiPEDir = ResultDir + "scintiPEEachCh/";
@@ -625,27 +625,20 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
         hDetectionEff[i]->SetMaximum(1.0);
     }
 
+    // Hit multiplicity
+    TH1D* hHitMultiplicity[NHodo];
+    for (int i=0; i<NHodo; ++i)
+    {
+        histName = "hHitMultiplicity" + HodoName[i];
+        histAxis = (boost::format("Number of hits per event (%s);Number of hits;Number of events") % HodoName[i]).str();
+        hHitMultiplicity[i] = new TH1D(histName.c_str(), histAxis.c_str(), 10, -0.5, 9.5);
+    }
 
-    // for (int i = 0; i < NScifiEachHodo; i++)
-    // {
-    //     for (int j = 0; j < NScifiEachHodo; j++)
-    //     {
-    //         histName = "hCrosstalkXYDarkCutX" + to_string(i + 1) + "Y" + to_string(j + 1);
-    //         histAxis = "L.Y. ratio left/center (using Z readout, Dark count cut, Cell X=" + to_string(i + 1) + " Y=" + to_string(j + 1) + ");L.Y. left(ch8)/center(ch9);Number of events";
-    //         hCrosstalkXYDarkCutEachCell[i][j] = new TH1D(histName.c_str(), histAxis.c_str(), NBinCT, MinCT, MaxCT);
-    //
-    //     }
-    // }
-
-
-    // TH2D* hCrosstalkXYDarkCutMap = new TH2D("hCrosstalkXYDCMap", "Cross talk rate (using Z readout, pedestal cut);cell # along X;cell # along Y;Cross talk rate (%)", NScifiEachHodo, MinHodoMap, MaxHodoMap, NScifiEachHodo, MinHodoMap, MaxHodoMap);
-    // hCrosstalkXYDarkCutMap->SetMinimum(MinCTMap);
-    // hCrosstalkXYDarkCutMap->SetMaximum(MaxCTMap);
-    //
     // Gap check
     const int GapGraphMax = 50000 * 30;
     TH1D* hGapCount1s = new TH1D("hGapCount1s", "Gap count (hodo & proto1s);event # ;gap count", GapGraphMax, 0, GapGraphMax);
     TH1D* hGapCount2s = new TH1D("hGapCount2s", "Gap count (hodo & proto2s);event # ;gap count", GapGraphMax, 0, GapGraphMax);
+
 
 
     // event loop variables & flags
@@ -685,7 +678,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
     // ここでのgood eventとは、藤田さんの修論P30の定義
     int countHodoHitEachCell[NScifiEachHodo][NScifiEachHodo] = { };
     int countScintiHitEachSurfaceCell[NSurfaceScinti][NScifiEachHodo][NScifiEachHodo] = { };
-    // int countStraight = 0;
+    int countStraight = 0;
     // array<int, NSurfaceScinti> countScintiHitEachSurface = { };
 
     array<bool, NHodo> hodoHit;
@@ -926,6 +919,12 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
                 }
             }
 
+            // Hit multiplicity
+            for(int i=0; i<NHodo; ++i)
+            {
+                hHitMultiplicity[i]->Fill(hitCountHodo[i]);
+            }
+
 
             // 各種Good eventの条件
             // ホドスコープ全てにヒット→good event
@@ -950,6 +949,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
             {
                 hHodoHitMapWithStraightBeam->Fill(maxChHodo[static_cast<int> (EHodoscope::HSX2)], maxChHodo[static_cast<int> (EHodoscope::HSY2)]);
                 isStraightBeam = true;
+                ++countStraight;
                 countHodoHitEachCell[maxChHodo[static_cast<int> (EHodoscope::HSX2)] - 1][maxChHodo[static_cast<int> (EHodoscope::HSY2)] - 1]++;
             }
 
@@ -1044,7 +1044,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
                         maxPEProtoXOfXZ = pe[static_cast<int> (easiroc)][easirocCh];
                     }
 
-                    if (isStraightBeam)
+                    if (isStraightBeam && horizontal == 3 && vertical == 3)
                     {
                         scintiHitEachSurface[static_cast<int> (surface)] = true;
                     }
@@ -1267,8 +1267,8 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
 
     int nHistHori = 4;
     int nHistVert = 2;
-    int histWidth = 800;
-    int histHeight = 600;
+    int histWidth = 1600;
+    int histHeight = 1200;
 
     array<int, NHodo> hodoHistOrder = { 5, 1, 4, 8 };
     array<int, NSurfaceScinti> protoHistOrder = { 3, 2, 7 };
@@ -1399,6 +1399,21 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
     #endif
 
 
+    // Hit multiplicity
+    nHistHori = 2;
+    nHistVert = 2;
+    canvas = new TCanvas("canvas", "", histWidth * nHistHori, histHeight * nHistVert);
+    canvas->Divide(nHistHori, nHistVert);
+    for(int i=0; i<NHodo; ++i)
+    {
+        canvas->cd(i+1);
+        hHitMultiplicity[i]->Draw();
+    }
+    figName = TString::Format("%sHitMultiplicity_%04d_%04d.%s", ResultDir.c_str(), runnum, subrun, outputFileType.c_str());
+    canvas->SaveAs(figName);
+    canvas->Clear();
+
+
 
 
     // Crosstalk
@@ -1511,11 +1526,11 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
 
 
 
-
-    cout << "Straight: " << countCTStraight << endl;
-    cout << "UpDown: " << countCTUpDown << endl;
-    cout << "DownOnly: " << countCTDownOnly << endl;
-    cout << "EachCell: " << countCTCell << endl;
+    cout << "Straight: " << countStraight << endl;
+    cout << "StraightForCT: " << countCTStraight << endl;
+    // cout << "UpDown: " << countCTUpDown << endl;
+    // cout << "DownOnly: " << countCTDownOnly << endl;
+    // cout << "EachCell: " << countCTCell << endl;
 
 
     // scatter plot of cross talk (TGraph)
@@ -1741,7 +1756,7 @@ int main(int argc, char** argv)
     int runnum = atoi(argv[1]);
     int fileCount = atoi(argv[2]);
     int x1, y1, y2, x2;
-    if (argc == 3 + 4)
+    if (argc >= 3 + 4)
     {
         x1 = atoi(argv[3]);
         y1 = atoi(argv[4]);
@@ -1749,14 +1764,14 @@ int main(int argc, char** argv)
         x2 = atoi(argv[6]);
     }
     int min_evt, max_evt;
-    if (argc == 3 + 4 + 2)
+    if (argc >= 3 + 4 + 2)
     {
         min_evt = atoi(argv[7]);
         max_evt = atoi(argv[8]);
     }
 
     string fileType;
-    if (argc == 3 + 4 + 2 + 1)
+    if (argc >= 3 + 4 + 2 + 1)
     {
         fileType = argv[9];
     }
