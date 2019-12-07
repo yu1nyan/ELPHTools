@@ -432,9 +432,9 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
     }
 
     const double MinPECenter = -1.5;
-    const double MaxPECenter = 18.5;
+    const double MaxPECenter = 98.5;
     const int NBinPECenter = MaxPECenter - MinPECenter;
-    TH1D* hPECenterForCTXY = new TH1D("hPECenterForCTXY", "PE center (using Z readout);Light yield (ch9) (p.e.);Number of events", 110, -1.5, 108.5);
+    TH1D* hPECenterForCTXY = new TH1D("hPECenterForCTXY", "PE center (using Z readout);Light yield (ch9) (p.e.);Number of events", NBinPECenter, MinPECenter, MaxPECenter);
 
 
     TH2D* hHodoHitMapWithProtoHitUp = new TH2D("hHodoHitMapWithProtoHitUp", "Upstream hodoscope hitmap with scinti. hit;cell # along X;cell # along Y;Number of events", NScifiEachHodo, MinHodoMap, MaxHodoMap, NScifiEachHodo, MinHodoMap, MaxHodoMap);
@@ -525,6 +525,9 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
     const double NBinCTScatter = 100;
     const double MinCTScatter = -4.5;
     const double MaxCTScatter = 95.5;
+    const double MinPEAround = -1.5;
+    const double MaxPEAround = 18.5;
+    const int NBinPEAround = MaxPEAround - MinPEAround;
     // 周辺キューブ用配列添字とChの対応
     // 0 1 2
     // 3 x 4
@@ -556,7 +559,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
         histName = "hPE" + CubeGeometryName[i] + "ForCTXY";
         // histAxis = "PE left (using Z readout);Light yield (ch8) (p.e.);Number of events";
         histAxis = (boost::format("PE %s (using Z readout);Light yield (ch%d) (p.e.);Number of events") % CubeGeometryTitle[i] % CubeChMapXY[i]).str();
-        hPEAroundForCTXY[i] = new TH1D(histName.c_str(), histAxis.c_str(), 20, -1.5, 18.5);
+        hPEAroundForCTXY[i] = new TH1D(histName.c_str(), histAxis.c_str(), NBinPEAround, MinPEAround, MaxPEAround);
         for (int j = 0; j < NScifiEachHodo; j++)
         {
             for (int k = 0; k < NScifiEachHodo; k++)
@@ -594,7 +597,8 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
     const string CubeGeometryTitleDiagOppDenomi[] = { "upper left", "lower right", "upper right", "lower left" };
     array<TH1D*, NCubeCTDiagOpp> hCrosstalkXYDarkCutDiagOpp;   // 対角方向の2つのキューブの光量の割合
 
-    array<TH1D*, NCubeCTDiagOpp> hPEAroundForCTXYDiagOpp;
+    array<TH1D*, NCubeCTDiagOpp> hPENoHitForCTXYDiagOpp;
+    array<TH1D*, NCubeCTDiagOpp> hPEHitForCTXYDiagOpp;
 
     TH1D* hCrosstalkXYDarkCutEachCellDiagOpp[NCubeCTDiagOpp][NScifiEachHodo][NScifiEachHodo];
     array<TH2D*, NCubeCTDiagOpp> hCrosstalkXYDarkCutMapDiagOpp;
@@ -610,7 +614,16 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
         // histAxis = "L.Y. ratio " + CubeGeometryTitleDiagOppNumera[i] + " / " + CubeGeometryTitleDiagOppDenomi[i] + " (using Z readout);L.Y. " + CubeGeometryTitleDiagOppNumera[i] + "(ch" + to_string(CubeChMapXY[i][1]) + ")/" + CubeGeometryTitleDiagOppDenomi[i] + "(ch9);Number of events";
         hCrosstalkXYDarkCutDiagOpp[i] = new TH1D(histName.c_str(), histAxis.c_str(), NBinCT, MinCT, MaxCT);
 
-        // TODO: 個別のPEのヒストグラムも作る
+        // クロストーク光量/ビームヒットキューブの光量のうち，クロストークキューブの光量分布
+        histName = "hPENumeraOf" + CubeGeometryNameDiagOpp[i];
+        histAxis = (boost::format("PE %1% (beam hit to %2% cube) ;L.Y. %1% (ch %3%);Number of events") % CubeGeometryTitleDiagOppNumera[i] % CubeGeometryTitleDiagOppDenomi[i] % CubeChMapXYDiagOpp[i][1]).str();
+        hPENoHitForCTXYDiagOpp[i] = new TH1D(histName.c_str(), histAxis.c_str(), NBinPEAround, MinPEAround, MaxPEAround);
+
+        // クロストーク光量/ビームヒットキューブの光量のうち，ビームヒットキューブの光量分布
+        histName = "hPEDenomiOf" + CubeGeometryNameDiagOpp[i];
+        histAxis = (boost::format("PE %1% (beam hit to %1% cube) ;L.Y. %1% (ch %2%);Number of events") % CubeGeometryTitleDiagOppDenomi[i] % CubeChMapXYDiagOpp[i][0]).str();
+        hPEHitForCTXYDiagOpp[i] = new TH1D(histName.c_str(), histAxis.c_str(), NBinPECenter, MinPECenter, MaxPECenter);
+
 
         for (int j = 0; j < NScifiEachHodo; j++)
         {
@@ -699,6 +712,10 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
     // Cellごとのcross talkヒストグラムに対するフラグ
     bool goodEventForCTCell;
     int countCTCell = 0;
+
+    array<bool, NCubeCTDiagOpp> goodEventForCTDiagOpp;
+    array<int, NCubeCTDiagOpp> countCTPointDiagOpp = { };
+
 
     // Detection eff.を出すための、読み出し方向ごとのgood event数・すべてのgood event数
     // ここでのgood eventとは、藤田さんの修論P30の定義
@@ -904,6 +921,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
             goodEventForCTDownOnly = false;
             goodEventForCTStraight = false;
             goodEventForCTCell = false;
+            goodEventForCTDiagOpp = {};
 
             // Hodoscope loop
             for (int ch = 0; ch < NScifi; ch++)
@@ -1008,6 +1026,28 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
 
             goodEventForCT = goodEventForCTStraight;
             // goodEventForCT = goodEventForCTUpDown;
+
+            // 対角キューブクロストーク用
+            // 左上のキューブにヒット
+            if (isStraightBeam && maxChHodo[static_cast<int> (EHodoscope::HSX2)] <= 4 && maxChHodo[static_cast<int> (EHodoscope::HSY2)] >= 13)
+            {
+                goodEventForCTDiagOpp[0] = true;
+            }
+            // 右上
+            else if (isStraightBeam && maxChHodo[static_cast<int> (EHodoscope::HSX2)] >= 13 && maxChHodo[static_cast<int> (EHodoscope::HSY2)] >= 13)
+            {
+                goodEventForCTDiagOpp[2] = true;
+            }
+            // 左下
+            else if (isStraightBeam && maxChHodo[static_cast<int> (EHodoscope::HSX2)] <= 4 && maxChHodo[static_cast<int> (EHodoscope::HSY2)] <= 4)
+            {
+                goodEventForCTDiagOpp[3] = true;
+            }
+            // 右下
+            else if (isStraightBeam && maxChHodo[static_cast<int> (EHodoscope::HSX2)] >= 13 && maxChHodo[static_cast<int> (EHodoscope::HSY2)] <= 4)
+            {
+                goodEventForCTDiagOpp[1] = true;
+            }
 
             // CellごとのCross talk分布出す用
             if (isStraightBeam &&
@@ -1143,24 +1183,27 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
 
                 countCTPoint++;
             }
-            array<int, NCubeCTDiagOpp> countCTPointDiagOpp = { };
-            // ホドスコープ左上 4x4 ch の領域にヒット　右下/左上のクロストーク見る用
-            if (goodEvent && singleHit &&
-                maxChHodo[static_cast<int> (EHodoscope::HSX2)] >= 1 && maxChHodo[static_cast<int> (EHodoscope::HSX2)] <= 4 && maxChHodo[static_cast<int> (EHodoscope::HSY2)] >= 13 && maxChHodo[static_cast<int> (EHodoscope::HSY2)] <= 16 &&
-                maxChHodo[static_cast<int> (EHodoscope::HSX1)] >= 1 && maxChHodo[static_cast<int> (EHodoscope::HSX1)] <= 4 && maxChHodo[static_cast<int> (EHodoscope::HSY1)] >= 13 && maxChHodo[static_cast<int> (EHodoscope::HSY1)] <= 16)
+
+            // 対角キューブのクロストーク
+            for (int i=0; i<NCubeCTDiagOpp; i++)
             {
-                int i = 0;
-                hCrosstalkScatterXYDiagOpp[i]->Fill(pe[static_cast<int> (EEasiroc::Scinti1)][CubeChMapXYDiagOpp[i][0]], pe[static_cast<int> (EEasiroc::Scinti1)][CubeChMapXYDiagOpp[i][1]]);
-                scatterCTXYDiagOpp[i]->SetPoint(countCTPointDiagOpp[i], pe[static_cast<int> (EEasiroc::Scinti1)][CubeChMapXYDiagOpp[i][0]], pe[static_cast<int> (EEasiroc::Scinti1)][CubeChMapXYDiagOpp[i][1]]);
-                if (pe[static_cast<int> (EEasiroc::Scinti1)][CubeChMapXYDiagOpp[i][1]] < DarkCutPEForCT)
+                if(goodEventForCTDiagOpp[i])
                 {
-                    hCrosstalkXYDarkCutDiagOpp[i]->Fill(0);
+                    double noHitPEXY = pe[static_cast<int> (EEasiroc::Scinti1)][CubeChMapXYDiagOpp[i][1]];
+                    double hitPEXY = pe[static_cast<int> (EEasiroc::Scinti1)][CubeChMapXYDiagOpp[i][0]];
+                    hPENoHitForCTXYDiagOpp[i]->Fill(noHitPEXY);
+                    hPEHitForCTXYDiagOpp[i]->Fill(hitPEXY);
+                    hCrosstalkScatterXYDiagOpp[i]->Fill(hitPEXY, noHitPEXY);
+                    if (noHitPEXY < DarkCutPEForCT)
+                    {
+                        hCrosstalkXYDarkCutDiagOpp[i]->Fill(0);
+                    }
+                    else
+                    {
+                        hCrosstalkXYDarkCutDiagOpp[i]->Fill(noHitPEXY / hitPEXY);
+                    }
+                    break;
                 }
-                else
-                {
-                    hCrosstalkXYDarkCutDiagOpp[i]->Fill(pe[static_cast<int> (EEasiroc::Scinti1)][CubeChMapXYDiagOpp[i][1]] / pe[static_cast<int> (EEasiroc::Scinti1)][CubeChMapXYDiagOpp[i][0]]);
-                }
-                countCTPointDiagOpp[i]++;
             }
 
 
@@ -1646,6 +1689,24 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
     // canvas->Clear();
 
     // ここまで
+
+    // 対角キューブのクロストーク
+    const string CubeGeometryFileNameDiagOpp[] = { "LROverUL", "ULOverLR", "LLOverUR", "UROverLL" };
+    const string FileNamePEDiagOpp[] = { {}, "ULOverLR", "LLOverUR", "UROverLL" };
+    for(int i=0; i<NCubeCTDiagOpp; ++i)
+    {
+        figName = TString::Format("%sCrosstalkDiagOpp%s_%04d_%04d.%s", ResultDir.c_str(), CubeGeometryFileNameDiagOpp[i].c_str(), runnum, subrun, outputFileType.c_str());
+        SaveHist(hCrosstalkXYDarkCutDiagOpp[i], figName, "", true);
+
+        figName = TString::Format("%sCrosstalkScatterHistDiagOpp%s_%04d_%04d.%s", ResultDir.c_str(), CubeGeometryFileNameDiagOpp[i].c_str(), runnum, subrun, outputFileType.c_str());
+        SaveHist(hCrosstalkScatterXYDiagOpp[i], figName, "colz");
+
+        figName = TString::Format("%sPEDiagOppHit%d%04d_%04d.%s", ResultDir.c_str(), i, runnum, subrun, outputFileType.c_str());
+        SaveHist(hPEHitForCTXYDiagOpp[i], figName);
+
+        figName = TString::Format("%sPEDiagOppNoHit%d%04d_%04d.%s", ResultDir.c_str(), i, runnum, subrun, outputFileType.c_str());
+        SaveHist(hPENoHitForCTXYDiagOpp[i], figName);
+    }
 
 
 
