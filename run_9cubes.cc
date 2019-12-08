@@ -40,7 +40,7 @@ using namespace std;
 
 
 // EASIROCのチャンネルとホドスコープの位置・チャンネルの対応
-tuple<EHodoscope, int> ToHodoscopeCh(int easirocCh, int shiftXup=0, int shiftYup=0, int shiftYDown=0, int shiftXDown=0)
+tuple<EHodoscope, int> ToHodoscopeCh(int easirocCh, int shiftXup = 0, int shiftYup = 0, int shiftYDown = 0, int shiftXDown = 0)
 {
     if (easirocCh >= 0 && easirocCh <= 15 && easirocCh - shiftXup >= 0 && easirocCh - shiftXup <= 15)
     {
@@ -66,7 +66,7 @@ tuple<EHodoscope, int> ToHodoscopeCh(int easirocCh, int shiftXup=0, int shiftYup
     return forward_as_tuple(EHodoscope::None, 0);
 }
 
-bool isGap(int hodoX, int hodoY, int protoX, int shiftX=0, int shiftY=0)
+bool isGap(int hodoX, int hodoY, int protoX, int shiftX = 0, int shiftY = 0)
 {
     if (protoX == 3 && !(hodoX + shiftX >= 6 && hodoX + shiftX <= 11 && hodoY + shiftY >= 6 && hodoY + shiftY <= 11))
     {
@@ -114,7 +114,7 @@ void SaveHodoMap(TH2* hist, TString outputFileDir, int nCellOneSide)
     canvas->Clear();
 }
 
-void changestatsBoxSize(TH1* hist, double x1, double x2, double y1, double y2)
+void changeStatsBoxSize(TH1* hist, double x1, double x2, double y1, double y2)
 {
     gPad->Update();
     TPaveStats* st = (TPaveStats*) hist->FindObject("stats");
@@ -124,9 +124,25 @@ void changestatsBoxSize(TH1* hist, double x1, double x2, double y1, double y2)
     st->SetY2NDC(y2);
 }
 
+void changeOptionStat(TH1* hist, int option)
+{
+    gPad->Update();
+    TPaveStats* st = (TPaveStats*) hist->FindObject("stats");
+    st->SetOptStat(option);
+    st->Draw();
+}
+
+void changeOptionFit(TH1* hist, int option)
+{
+    gPad->Update();
+    TPaveStats* st = (TPaveStats*) hist->FindObject("stats");
+    st->SetOptFit(option);
+    st->Draw();
+}
+
 // lineColor:
 // 0:white, 1:black, 2:red, 3:green, 4:blue, 5:yellow, 6:magenta, 7:cyan, 8:dark green, 9:purple
-void drawCubeLine(string config="", int lineColor=7)
+void drawCubeLine(string config = "", int lineColor = 7)
 {
     //     const double binmin = -0.1;
     // const double binmax = 30.;
@@ -228,7 +244,7 @@ void drawCubeLine(string config="", int lineColor=7)
     circle->Draw();
 }
 
-void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int shiftHSY2=0, int shiftHSX2=0, int min_evt=-1, int max_evt=-1, string outputFileType="png", int gap_point_0=0, int gap_pt2s_0=0, int gap_pt1s_0=0, int gap_hs_0=0, int gap_point_1=0, int gap_pt2s_1=0, int gap_pt1s_1=0, int gap_hs_1=0)
+void run_proto(int runnum, int fileCount, int shiftHSX1 = 0, int shiftHSY1 = 0, int shiftHSY2 = 0, int shiftHSX2 = 0, int min_evt = -1, int max_evt = -1, string outputFileType = "png", int gap_point_0 = 0, int gap_pt2s_0 = 0, int gap_pt1s_0 = 0, int gap_hs_0 = 0, int gap_point_1 = 0, int gap_pt2s_1 = 0, int gap_pt1s_1 = 0, int gap_hs_1 = 0)
 {
     // constants
     gErrorIgnoreLevel = kError;
@@ -306,7 +322,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
     time_t rawTime = time(nullptr);
     struct tm timeInfo = *localtime(&rawTime);
     string dateTimeStr = to_string(timeInfo.tm_sec + 100 * timeInfo.tm_min + 10000 * timeInfo.tm_hour + 1000000 * timeInfo.tm_mday + 100000000 * (timeInfo.tm_mon + 1) + 10000000000 * (1900 + timeInfo.tm_year));
-    // resultDirTemp += dateTimeStr + "/";
+    resultDirTemp += dateTimeStr + "/";
 
     const string ResultDir = resultDirTemp;
     const string ScintiPEDir = ResultDir + "scintiPEEachCh/";
@@ -463,7 +479,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
 
         for (int ch = 0; ch < NChEasiroc; ch++)
         {
-            if(toScintiCh->isConnected(easiroc, ch))
+            if (toScintiCh->isConnected(easiroc, ch))
             {
                 tuple<EScintiSurface, int, int> scintiCh = toScintiCh->getCh(easiroc, ch);
                 EScintiSurface surface = get<0> (scintiCh);
@@ -471,7 +487,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
                 int vertical = get<2> (scintiCh);
                 usingProtoCh.push_back(forward_as_tuple(easiroc, ch, surface, horizontal, vertical));
             }
-            if(toScintiCh555->isConnected(easiroc, ch))
+            if (toScintiCh555->isConnected(easiroc, ch))
             {
                 tuple<EScintiSurface, int, int> scintiCh = toScintiCh555->getCh(easiroc, ch);
 
@@ -480,7 +496,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
                 int vertical = get<2> (scintiCh);
 
                 usingProtoChForAllOutput.push_back(forward_as_tuple(easiroc, ch, surface, horizontal, vertical));
-                if(horizontal == 0 || vertical == 0)
+                if (horizontal == 0 || vertical == 0)
                     continue;
                 // cout << horizontal << ", " << vertical << endl;
 
@@ -502,7 +518,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
                     histAxis += "X=" + to_string(horizontal) + " Z=" + to_string(vertical) + ";Light yield (p.e.);Number of events";
                 }
 
-                hPEProtoEach[static_cast<int> (surface)][horizontal-1][vertical-1] = new TH1D(histName.c_str(), histAxis.c_str(), 10, -1.5, 8.5);
+                hPEProtoEach[static_cast<int> (surface)][horizontal - 1][vertical - 1] = new TH1D(histName.c_str(), histAxis.c_str(), 10, -1.5, 8.5);
 
                 #ifdef DEBUG
                     cout << histName << " created." << endl;
@@ -523,8 +539,8 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
     const int CenterCubeYOfXY = 3;
     // For scatter histograms
     const double NBinCTScatter = 100;
-    const double MinCTScatter = -4.5;
-    const double MaxCTScatter = 95.5;
+    const double MinCTScatter = -1.5;
+    const double MaxCTScatter = 98.5;
     const double MinPEAround = -1.5;
     const double MaxPEAround = 18.5;
     const int NBinPEAround = MaxPEAround - MinPEAround;
@@ -666,7 +682,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
 
     // Hit multiplicity
     TH1D* hHitMultiplicity[NHodo];
-    for (int i=0; i<NHodo; ++i)
+    for (int i = 0; i < NHodo; ++i)
     {
         histName = "hHitMultiplicity" + HodoName[i];
         histAxis = (boost::format("Number of hits per event (%s);Number of hits;Number of events") % HodoName[i]).str();
@@ -921,7 +937,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
             goodEventForCTDownOnly = false;
             goodEventForCTStraight = false;
             goodEventForCTCell = false;
-            goodEventForCTDiagOpp = {};
+            goodEventForCTDiagOpp = { };
 
             // Hodoscope loop
             for (int ch = 0; ch < NScifi; ch++)
@@ -964,7 +980,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
             }
 
             // Hit multiplicity
-            for(int i=0; i<NHodo; ++i)
+            for (int i = 0; i < NHodo; ++i)
             {
                 hHitMultiplicity[i]->Fill(hitCountHodo[i]);
             }
@@ -1065,11 +1081,10 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
 
             // Good event ここまで
 
-
             // 使用していないチャンネルの光量も出力
-            if(isStraightBeam)
+            if (isStraightBeam)
             {
-                for(auto ch : usingProtoChForAllOutput)
+                for (auto ch : usingProtoChForAllOutput)
                 {
                     EEasiroc easiroc = get<0> (ch);
                     int easirocCh = get<1> (ch);
@@ -1080,7 +1095,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
                     pe[static_cast<int> (easiroc)][easirocCh] = (double(adc[static_cast<int> (easiroc)][easirocCh]) - mean_ped[static_cast<int> (easiroc)][easirocCh]) / gain[static_cast<int> (easiroc)][easirocCh];
                     // cout << pe[static_cast<int> (easiroc)][easirocCh] << endl;
 
-                    hPEProtoEach[static_cast<int> (surface)][horizontal-1][vertical-1]->Fill(pe[static_cast<int> (easiroc)][easirocCh]);
+                    hPEProtoEach[static_cast<int> (surface)][horizontal - 1][vertical - 1]->Fill(pe[static_cast<int> (easiroc)][easirocCh]);
                 }
             }
 
@@ -1185,9 +1200,9 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
             }
 
             // 対角キューブのクロストーク
-            for (int i=0; i<NCubeCTDiagOpp; i++)
+            for (int i = 0; i < NCubeCTDiagOpp; i++)
             {
-                if(goodEventForCTDiagOpp[i])
+                if (goodEventForCTDiagOpp[i])
                 {
                     double noHitPEXY = pe[static_cast<int> (EEasiroc::Scinti1)][CubeChMapXYDiagOpp[i][1]];
                     double hitPEXY = pe[static_cast<int> (EEasiroc::Scinti1)][CubeChMapXYDiagOpp[i][0]];
@@ -1239,40 +1254,6 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
                             hCrosstalkXYDarkCutEachCell[i][maxChHodo[static_cast<int> (EHodoscope::HSX2)] - 1][maxChHodo[static_cast<int> (EHodoscope::HSY2)] - 1]->Fill(aroundPEXY[i] / centerPEXY);
                         }
                         hCrosstalkScatterXYEachCell[i][maxChHodo[static_cast<int> (EHodoscope::HSX2)] - 1][maxChHodo[static_cast<int> (EHodoscope::HSY2)] - 1]->Fill(centerPEXY, aroundPEXY[i]);
-                    }
-                }
-
-                // 四隅のいずれかのキューブの光量が最大
-                if ((maxChProtoXOfXY == 2 || maxChProtoXOfXY == 4) && (maxChProtoYOfXY == 2 || maxChProtoYOfXY == 4))
-                {
-                    int i;
-                    // 左上のキューブの光量が最大
-                    if (maxChProtoXOfXY == 2 && maxChProtoYOfXY == 4)
-                    {
-                        i = 0;
-                    }
-                    // 右下
-                    else if (maxChProtoXOfXY == 4 && maxChProtoYOfXY == 2)
-                    {
-                        i = 1;
-                    }
-                    // それ以外ならスキップ
-                    else
-                    {
-                        i = -1;
-                    }
-
-                    if (i >= 0)
-                    {
-                        if (pe[static_cast<int> (EEasiroc::Scinti1)][CubeChMapXYDiagOpp[i][1]] < DarkCutPEForCT)
-                        {
-                            hCrosstalkXYDarkCutEachCellDiagOpp[0][maxChHodo[static_cast<int> (EHodoscope::HSX2)] - 1][maxChHodo[static_cast<int> (EHodoscope::HSY2)] - 1]->Fill(0);
-                        }
-                        else
-                        {
-                            hCrosstalkXYDarkCutEachCellDiagOpp[0][maxChHodo[static_cast<int> (EHodoscope::HSX2)] - 1][maxChHodo[static_cast<int> (EHodoscope::HSY2)] - 1]->Fill(pe[static_cast<int> (EEasiroc::Scinti1)][CubeChMapXYDiagOpp[i][1]] / pe[static_cast<int> (EEasiroc::Scinti1)][CubeChMapXYDiagOpp[i][0]]);
-                        }
-                        // hCrosstalkScatterXYEachCellDiagOpp[0][maxChHodo[static_cast<int> (EHodoscope::HSX2)] - 1][maxChHodo[static_cast<int> (EHodoscope::HSY2)] - 1]->Fill(pe[static_cast<int> (EEasiroc::Scinti1)][CubeChMapXYDiagOpp[i][0]], pe[static_cast<int> (EEasiroc::Scinti1)][CubeChMapXYDiagOpp[i][1]]);
                     }
                 }
             }
@@ -1463,7 +1444,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
 
         canvas = new TCanvas();
         // gPad->SetLogy();
-        hPEProtoEach[static_cast<int> (surface)][horizontal-1][vertical-1]->Draw();
+        hPEProtoEach[static_cast<int> (surface)][horizontal - 1][vertical - 1]->Draw();
 
         figName = TString::Format("%sPE_%s_%04d_%04d.%s", ScintiPEDir.c_str(), chName.c_str(), runnum, subrun, outputFileType.c_str());
         canvas->SaveAs(figName);
@@ -1494,9 +1475,9 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
     nHistVert = 2;
     canvas = new TCanvas("canvas", "", histWidth * nHistHori, histHeight * nHistVert);
     canvas->Divide(nHistHori, nHistVert);
-    for(int i=0; i<NHodo; ++i)
+    for (int i = 0; i < NHodo; ++i)
     {
-        canvas->cd(i+1);
+        canvas->cd(i + 1);
         hHitMultiplicity[i]->Draw();
     }
     figName = TString::Format("%sHitMultiplicity_%04d_%04d.%s", ResultDir.c_str(), runnum, subrun, outputFileType.c_str());
@@ -1520,7 +1501,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
         gStyle->SetOptStat(2210);
         // gPad->SetLogy();
         // gStyle->SetOptFit(111);
-        changestatsBoxSize(hCrosstalkXY[i], 0.7, 0.99, 0.65, 0.935);
+        changeStatsBoxSize(hCrosstalkXY[i], 0.7, 0.99, 0.65, 0.935);
         figName = TString::Format("%sCrosstalk%d_%04d_%04d.%s", ResultDir.c_str(), i, runnum, subrun, outputFileType.c_str());
         canvas->SaveAs(figName);
         canvas->Clear();
@@ -1537,7 +1518,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
         gStyle->SetOptStat(2210);
         // gPad->SetLogy();
         // gStyle->SetOptFit(111);
-        changestatsBoxSize(hCrosstalkXYDarkCut[i], 0.7, 0.99, 0.65, 0.935);
+        changeStatsBoxSize(hCrosstalkXYDarkCut[i], 0.7, 0.99, 0.65, 0.935);
         figName = TString::Format("%sCrosstalkDarkCut%d_%04d_%04d.%s", ResultDir.c_str(), i, runnum, subrun, outputFileType.c_str());
         canvas->SetLogy();
         canvas->SaveAs(figName);
@@ -1546,16 +1527,20 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
 
 
     // center L.Y. for crosstalk
-    TFile histsCenter(TString::Format("%sPECenter_%04d_%04d.root", ResultDir.c_str(), runnum, subrun), "RECREATE");
-    canvas = new TCanvas();
-    // hPECenterForCTXY->Fit("landau", FitOption, "", FitRangePECenterXY[0], FitRangePECenterXY[1]);
-    hPECenterForCTXY->Draw();
-    hPECenterForCTXY->Write();
-    histsCenter.Close();
-
+    // TFile histsCenter(TString::Format("%sPECenter_%04d_%04d.root", ResultDir.c_str(), runnum, subrun), "RECREATE");
+    // canvas = new TCanvas();
+    double maxBin = hPECenterForCTXY->GetMaximumBin() + MinPECenter;
+    hPECenterForCTXY->Fit("landau", FitOption, "", maxBin - 7, maxBin + 12);
+    changeStatsBoxSize(hPECenterForCTXY, 0.65, 0.98, 0.65, 0.92);
+    changeOptionStat(hPECenterForCTXY, 10);
+    changeOptionFit(hPECenterForCTXY, 110);
+    // hPECenterForCTXY->Draw();
+    // hPECenterForCTXY->Write();
+    // histsCenter.Close();
     figName = TString::Format("%sPECenter_%04d_%04d.%s", ResultDir.c_str(), runnum, subrun, outputFileType.c_str());
-    canvas->SaveAs(figName);
-    canvas->Clear();
+    SaveHist(hPECenterForCTXY, figName);
+    // canvas->SaveAs(figName);
+    // canvas->Clear();
 
     // around L.Y. for crosstalk
     TFile histsAround(TString::Format("%sPEAround_%04d_%04d.root", ResultDir.c_str(), runnum, subrun), "RECREATE");
@@ -1658,9 +1643,11 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
         hCrosstalkScatterXY[i]->Draw("colz");
 
         gPad->SetRightMargin(RightMarginForHodoMap);
-        changestatsBoxSize(hCrosstalkScatterXY[i], 0.65, 0.88, 0.6, 0.9);
+        changeStatsBoxSize(hCrosstalkScatterXY[i], 0.55, 0.85, 0.6, 0.92);
+        // changeOptionStat(hCrosstalkScatterXY[i], 0);
         figName = TString::Format("%sCrosstalkScatterHist%d_%04d_%04d.%s", ResultDir.c_str(), i, runnum, subrun, outputFileType.c_str());
-        canvas->SaveAs(figName);
+        SaveHist(hCrosstalkScatterXY[i], figName, "colz");
+        // canvas->SaveAs(figName);
     }
     canvas->Clear();
 
@@ -1677,7 +1664,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
     //         {
     //             hCrosstalkScatterXYEachCell[i][j][k]->Draw("colz");
     //             gPad->SetRightMargin(RightMarginForHodoMap);
-    //             changestatsBoxSize(hCrosstalkScatterXYEachCell[i][j][k], 0.65, 0.88, 0.6, 0.9);
+    //             changeStatsBoxSize(hCrosstalkScatterXYEachCell[i][j][k], 0.65, 0.88, 0.6, 0.9);
     //             hCrosstalkScatterXYEachCell[i][j][k]->Write();
     //             figName = TString::Format("%sCrosstalkScatterHist%dX%dY%d_%04d_%04d.%s", CrosstalkDir.c_str(), i, j + 1, k + 1, runnum, subrun, outputFileType.c_str());
     //             canvas->SaveAs(figName);
@@ -1692,13 +1679,16 @@ void run_proto(int runnum, int fileCount, int shiftHSX1=0, int shiftHSY1=0, int 
 
     // 対角キューブのクロストーク
     const string CubeGeometryFileNameDiagOpp[] = { "LROverUL", "ULOverLR", "LLOverUR", "UROverLL" };
-    const string FileNamePEDiagOpp[] = { {}, "ULOverLR", "LLOverUR", "UROverLL" };
-    for(int i=0; i<NCubeCTDiagOpp; ++i)
+    const string FileNamePEDiagOpp[] = { { }, "ULOverLR", "LLOverUR", "UROverLL" };
+    for (int i = 0; i < NCubeCTDiagOpp; ++i)
     {
         figName = TString::Format("%sCrosstalkDiagOpp%s_%04d_%04d.%s", ResultDir.c_str(), CubeGeometryFileNameDiagOpp[i].c_str(), runnum, subrun, outputFileType.c_str());
         SaveHist(hCrosstalkXYDarkCutDiagOpp[i], figName, "", true);
 
         figName = TString::Format("%sCrosstalkScatterHistDiagOpp%s_%04d_%04d.%s", ResultDir.c_str(), CubeGeometryFileNameDiagOpp[i].c_str(), runnum, subrun, outputFileType.c_str());
+        hCrosstalkScatterXYDiagOpp[i]->Draw("colz");
+        gPad->SetRightMargin(RightMarginForHodoMap);
+        changeStatsBoxSize(hCrosstalkScatterXYDiagOpp[i], 0.55, 0.85, 0.6, 0.92);
         SaveHist(hCrosstalkScatterXYDiagOpp[i], figName, "colz");
 
         figName = TString::Format("%sPEDiagOppHit%d%04d_%04d.%s", ResultDir.c_str(), i, runnum, subrun, outputFileType.c_str());
