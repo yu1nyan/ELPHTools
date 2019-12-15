@@ -38,6 +38,7 @@ void run_calib(string type, int nrun, int nsub, int file_count, int low, int hig
     {
         switch (nsub)
         {
+            case 0:
             case 2: toScintiCh = new ToScintiCh(EScintiType::Proto555); break;
             case 3: toScintiCh = new ToScintiCh(EScintiType::OneCube); break;
             case 4: toScintiCh = new ToScintiCh(EScintiType::TwoCubes); break;
