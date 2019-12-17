@@ -1143,7 +1143,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1 = 0, int shiftHSY1 = 0, 
                         maxPEProtoXOfXZ = pe[static_cast<int> (easiroc)][easirocCh];
                     }
 
-                    if (isStraightBeam && horizontal == 3 && vertical == 3)
+                    if (isStraightBeam)
                     {
                         scintiHitEachSurface[static_cast<int> (surface)] = true;
                     }
@@ -1240,7 +1240,8 @@ void run_proto(int runnum, int fileCount, int shiftHSX1 = 0, int shiftHSY1 = 0, 
                 // #endif
 
                 // Center cubeの光量が一番多いとき
-                if (maxChProtoXOfXY == 3 && maxChProtoYOfXY == 3)
+                // if (maxChProtoXOfXY == 3 && maxChProtoYOfXY == 3)
+                if(true)
                 {
                     for (int i = 0; i < NCubeCT; i++)
                     {
@@ -1829,8 +1830,10 @@ void run_proto(int runnum, int fileCount, int shiftHSX1 = 0, int shiftHSY1 = 0, 
     {
         canvas = new TCanvas("canvas", "", histWidth * nHistHori, histHeight * nHistVert);
         hCrosstalkXYDarkCutMap[i]->Draw("text colz");
-        hCrosstalkXYDarkCutMap[i]->GetXaxis()->SetNdivisions(NScifiEachHodo);
-        hCrosstalkXYDarkCutMap[i]->GetYaxis()->SetNdivisions(NScifiEachHodo);
+        hCrosstalkXYDarkCutMap[i]->GetXaxis()->SetRangeUser(4.5, 11.5);
+        hCrosstalkXYDarkCutMap[i]->GetYaxis()->SetRangeUser(5.5, 12.5);
+        hCrosstalkXYDarkCutMap[i]->GetXaxis()->SetNdivisions(7);
+        hCrosstalkXYDarkCutMap[i]->GetYaxis()->SetNdivisions(7);
         gPad->SetRightMargin(RightMarginForHodoMap);
         hCrosstalkXYDarkCutMap[i]->SetStats(kFALSE);
 
