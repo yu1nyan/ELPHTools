@@ -534,7 +534,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1 = 0, int shiftHSY1 = 0, 
     const double MaxCT = 1.0;
     const int NCubeCT = 8;
     const double MinCTMap = 0;
-    const double MaxCTMap = 10;
+    const double MaxCTMap = 7;
     const int CenterCubeXOfXY = 3;
     const int CenterCubeYOfXY = 3;
     // For scatter histograms
@@ -542,8 +542,8 @@ void run_proto(int runnum, int fileCount, int shiftHSX1 = 0, int shiftHSY1 = 0, 
     const double MinCTScatter = -1.5;
     const double MaxCTScatter = 98.5;
     const double MinPEAround = -1.5;
-    const double MaxPEAround = 18.5;
-    const int NBinPEAround = MaxPEAround - MinPEAround;
+    const double MaxPEAround = 20.5;
+    const int NBinPEAround = (MaxPEAround - MinPEAround);
     // 周辺キューブ用配列添字とChの対応
     // 0 1 2
     // 3 x 4
@@ -601,6 +601,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1 = 0, int shiftHSY1 = 0, 
         histName = "hCrosstalkScatterXY" + CubeGeometryName[i];
         histAxis = (boost::format("L.Y. %s vs center (using Z readout);L.Y. center (ch8) (p.e.);L.Y. %s (ch%d) (p.e.);Number of events") % CubeGeometryTitle[i] % CubeGeometryTitle[i] % CubeChMapXY[i]).str();
         hCrosstalkScatterXY[i] = new TH2D(histName.c_str(), histAxis.c_str(), NBinCTScatter, MinCTScatter, MaxCTScatter, NBinCTScatter, MinCTScatter, MaxCTScatter);
+        // hCrosstalkScatterXY[i] = new TH2D(histName.c_str(), histAxis.c_str(), NBinPECenter, MinPECenter, MaxPECenter, NBinPEAround, MinPEAround, MaxPEAround);
     }
 
 
@@ -1748,7 +1749,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1 = 0, int shiftHSY1 = 0, 
     hHodoHitMapUp->GetYaxis()->SetNdivisions(NScifiEachHodo);
     hHodoHitMapUp->SetStats(kFALSE);
     // hHodoHitMapUp->SetMarkerSize(2.0);
-    hHodoHitMapUp->Draw("text colz");
+    hHodoHitMapUp->Draw("colz");
     gPad->SetRightMargin(RightMarginForHodoMap);
 
     canvas->cd(2);
@@ -1760,14 +1761,14 @@ void run_proto(int runnum, int fileCount, int shiftHSX1 = 0, int shiftHSY1 = 0, 
     hHodoHitMapDown->GetYaxis()->SetNdivisions(NScifiEachHodo);
     hHodoHitMapDown->SetStats(kFALSE);
     // hHodoHitMapDown->SetMarkerSize(2.0);
-    hHodoHitMapDown->Draw("text colz");
+    hHodoHitMapDown->Draw("colz");
     gPad->SetRightMargin(RightMarginForHodoMap);
 
     canvas->cd(3);
     hHodoHitMapWithStraightBeam->GetXaxis()->SetNdivisions(NScifiEachHodo);
     hHodoHitMapWithStraightBeam->GetYaxis()->SetNdivisions(NScifiEachHodo);
     hHodoHitMapWithStraightBeam->SetStats(kFALSE);
-    hHodoHitMapWithStraightBeam->Draw("text colz");
+    hHodoHitMapWithStraightBeam->Draw("colz");
     gPad->SetRightMargin(RightMarginForHodoMap);
 
     figName = TString::Format("%sHodoHitMap_%04d_%04d.%s", ResultDir.c_str(), runnum, subrun, outputFileType.c_str());
@@ -1801,7 +1802,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1 = 0, int shiftHSY1 = 0, 
         hDetectionEff[i]->SetStats(kFALSE);
         gStyle->SetPadGridX(1);
         gStyle->SetPadGridY(1);
-        hDetectionEff[i]->Draw("text colz");
+        hDetectionEff[i]->Draw("colz");
         drawCubeLine("inj", 2);
         gPad->SetRightMargin(RightMarginForHodoMap);
     }
