@@ -1520,7 +1520,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1 = 0, int shiftHSY1 = 0, 
         gStyle->SetOptStat(2210);
         // gPad->SetLogy();
         // gStyle->SetOptFit(111);
-        changeStatsBoxSize(hCrosstalkXYDarkCut[i], 0.7, 0.99, 0.65, 0.935);
+        changeStatsBoxSize(hCrosstalkXYDarkCut[i], 0.6, 0.99, 0.65, 0.935);
         figName = TString::Format("%sCrosstalkDarkCut%d_%04d_%04d.%s", ResultDir.c_str(), i, runnum, subrun, outputFileType.c_str());
         canvas->SetLogy();
         canvas->SaveAs(figName);
@@ -1552,7 +1552,8 @@ void run_proto(int runnum, int fileCount, int shiftHSX1 = 0, int shiftHSY1 = 0, 
         // hPEAroundForCTXY[i]->Fit();
         hPEAroundForCTXY[i]->Draw();
         hPEAroundForCTXY[i]->Write();
-
+        changeOptionStat(hPEAroundForCTXY[i], 2210);
+        changeStatsBoxSize(hPEAroundForCTXY[i], 0.6, 0.99, 0.65, 0.935);
         figName = TString::Format("%sPEAround%d_%04d_%04d.%s", ResultDir.c_str(), i, runnum, subrun, outputFileType.c_str());
         canvas->SaveAs(figName);
         canvas->Clear();
