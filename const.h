@@ -55,3 +55,6 @@ const double HodoWidth = 1.7;   // (mm)
 // {
 //     Result, EvtDisplay, ScintiPE, HodoPE
 // };
+
+const double RightMarginForHodoMap = 0.15;
+const double TitleOffsetTH2 = 1.6;

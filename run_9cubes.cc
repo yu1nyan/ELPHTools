@@ -453,13 +453,13 @@ void run_proto(int runnum, int fileCount, int shiftHSX1 = 0, int shiftHSY1 = 0, 
     TH1D* hPECenterForCTXY = new TH1D("hPECenterForCTXY", "PE center (using Z readout);Light yield (ch9) (p.e.);Number of events", NBinPECenter, MinPECenter, MaxPECenter);
 
 
-    TH2D* hHodoHitMapWithProtoHitUp = new TH2D("hHodoHitMapWithProtoHitUp", "Upstream hodoscope hitmap with scinti. hit;cell # along X;cell # along Y;Number of events", NScifiEachHodo, MinHodoMap, MaxHodoMap, NScifiEachHodo, MinHodoMap, MaxHodoMap);
-    TH2D* hHodoHitMapWithProtoHitDown = new TH2D("hHodoHitMapWithProtoHitDown", "Downstream hodoscope hitmap with scinti. hit;cell # along X;cell # along Y;Number of events", NScifiEachHodo, MinHodoMap, MaxHodoMap, NScifiEachHodo, MinHodoMap, MaxHodoMap);
+    TH2D* hHodoHitMapWithProtoHitUp = new TH2D("hHodoHitMapWithProtoHitUp", "Upstream hodoscope hitmap with scinti. hit;Cell # along X;Cell # along Y;Number of events", NScifiEachHodo, MinHodoMap, MaxHodoMap, NScifiEachHodo, MinHodoMap, MaxHodoMap);
+    TH2D* hHodoHitMapWithProtoHitDown = new TH2D("hHodoHitMapWithProtoHitDown", "Downstream hodoscope hitmap with scinti. hit;Cell # along X;Cell # along Y;Number of events", NScifiEachHodo, MinHodoMap, MaxHodoMap, NScifiEachHodo, MinHodoMap, MaxHodoMap);
 
-    TH2D* hHodoHitMapUp = new TH2D("hHodoHitMapUp", "Upstream hodoscope hitmap;cell # along X;cell # along Y;Number of events", NScifiEachHodo, MinHodoMap, MaxHodoMap, NScifiEachHodo, MinHodoMap, MaxHodoMap);
-    TH2D* hHodoHitMapDown = new TH2D("hHodoHitMapDown", "Downstream hodoscope hitmap;cell # along X;cell # along Y;Number of events", NScifiEachHodo, MinHodoMap, MaxHodoMap, NScifiEachHodo, MinHodoMap, MaxHodoMap);
+    TH2D* hHodoHitMapUp = new TH2D("hHodoHitMapUp", "Upstream hodoscope hitmap;Cell # along X;Cell # along Y;Number of events", NScifiEachHodo, MinHodoMap, MaxHodoMap, NScifiEachHodo, MinHodoMap, MaxHodoMap);
+    TH2D* hHodoHitMapDown = new TH2D("hHodoHitMapDown", "Downstream hodoscope hitmap;Cell # along X;Cell # along Y;Number of events", NScifiEachHodo, MinHodoMap, MaxHodoMap, NScifiEachHodo, MinHodoMap, MaxHodoMap);
 
-    TH2D* hHodoHitMapWithStraightBeam = new TH2D("hHodoHitMapWithStraightBeam", "Hodoscope hitmap with straight beam event;cell # along X;cell # along Y;Number of events", NScifiEachHodo, MinHodoMap, MaxHodoMap, NScifiEachHodo, MinHodoMap, MaxHodoMap);
+    TH2D* hHodoHitMapWithStraightBeam = new TH2D("hHodoHitMapWithStraightBeam", "Hodoscope hitmap with straight beam event;Cell # along X;Cell # along Y;Number of events", NScifiEachHodo, MinHodoMap, MaxHodoMap, NScifiEachHodo, MinHodoMap, MaxHodoMap);
 
     TH1D* hPEProtoEach[NSurfaceScinti][NChOneSide][NChOneSide];
 
@@ -591,7 +591,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1 = 0, int shiftHSY1 = 0, 
         }
 
         histName = (boost::format("hCrosstalkXY%sDarkCutMap") % CubeGeometryName[i]).str();
-        histAxis = (boost::format("Crosstalk ratio (%s, using Z readout, dark count cut);cell # along X;cell # along Y;Crosstalk ratio (%%)") % CubeGeometryTitle[i]).str();
+        histAxis = (boost::format("L.Y. ratio (%s, using Z readout, dark count cut);Cell # along X;Cell # along Y;L.Y. ratio (%%)") % CubeGeometryTitle[i]).str();
         hCrosstalkXYDarkCutMap[i] = new TH2D(histName.c_str(), histAxis.c_str(), NScifiEachHodo, MinHodoMap, MaxHodoMap, NScifiEachHodo, MinHodoMap, MaxHodoMap);
         hCrosstalkXYDarkCutMap[i]->SetMinimum(MinCTMap);
         hCrosstalkXYDarkCutMap[i]->SetMaximum(MaxCTMap);
@@ -657,7 +657,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1 = 0, int shiftHSY1 = 0, 
         }
 
         histName = (boost::format("hCrosstalkXY%sDarkCutMap") % CubeGeometryNameDiagOpp[i]).str();
-        histAxis = (boost::format("Crosstalk ratio (%1%/%2%, using Z readout, dark count cut);cell # along X;cell # along Y;Crosstalk ratio (%%)") % CubeGeometryTitleDiagOppNumera[i] % CubeGeometryTitleDiagOppDenomi[i]).str();
+        histAxis = (boost::format("L.Y. ratio (%1%/%2%, using Z readout, dark count cut);Cell # along X;Cell # along Y;L.Y. ratio (%%)") % CubeGeometryTitleDiagOppNumera[i] % CubeGeometryTitleDiagOppDenomi[i]).str();
         hCrosstalkXYDarkCutMapDiagOpp[i] = new TH2D(histName.c_str(), histAxis.c_str(), NScifiEachHodo, MinHodoMap, MaxHodoMap, NScifiEachHodo, MinHodoMap, MaxHodoMap);
         hCrosstalkXYDarkCutMapDiagOpp[i]->SetMinimum(MinCTMap);
         hCrosstalkXYDarkCutMapDiagOpp[i]->SetMaximum(MaxCTMap);
@@ -1334,7 +1334,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1 = 0, int shiftHSY1 = 0, 
 
 
     // Draw Histograms
-    const double RightMarginForHodoMap = 0.15;
+
 
     int nHistHori = 4;
     int nHistVert = 2;
@@ -1346,7 +1346,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1 = 0, int shiftHSY1 = 0, 
 
     const double TitleSize = 0.03;
     const double LabelSize = 0.04;
-    const double MarkerSize = 2.0;
+    const double MarkerSize = 2.2;
 
     // hit rate
     gStyle->SetPaintTextFormat("3.0f");
@@ -1749,9 +1749,10 @@ void run_proto(int runnum, int fileCount, int shiftHSX1 = 0, int shiftHSY1 = 0, 
     hHodoHitMapUp->GetXaxis()->SetNdivisions(NScifiEachHodo);
     hHodoHitMapUp->GetYaxis()->SetNdivisions(NScifiEachHodo);
     hHodoHitMapUp->SetStats(kFALSE);
+    hHodoHitMapUp->GetZaxis()->SetTitleOffset(1.6);
     // hHodoHitMapUp->SetMarkerSize(2.0);
     hHodoHitMapUp->Draw("colz");
-    gPad->SetRightMargin(RightMarginForHodoMap);
+    gPad->SetRightMargin(0.16);
 
     canvas->cd(2);
     // hHodoHitMapDown->GetYaxis()->SetTitleSize(0.03);
@@ -1761,16 +1762,18 @@ void run_proto(int runnum, int fileCount, int shiftHSX1 = 0, int shiftHSY1 = 0, 
     hHodoHitMapDown->GetXaxis()->SetNdivisions(NScifiEachHodo);
     hHodoHitMapDown->GetYaxis()->SetNdivisions(NScifiEachHodo);
     hHodoHitMapDown->SetStats(kFALSE);
+    hHodoHitMapDown->GetZaxis()->SetTitleOffset(1.6);
     // hHodoHitMapDown->SetMarkerSize(2.0);
     hHodoHitMapDown->Draw("colz");
-    gPad->SetRightMargin(RightMarginForHodoMap);
+    gPad->SetRightMargin(0.16);
 
     canvas->cd(3);
     hHodoHitMapWithStraightBeam->GetXaxis()->SetNdivisions(NScifiEachHodo);
     hHodoHitMapWithStraightBeam->GetYaxis()->SetNdivisions(NScifiEachHodo);
     hHodoHitMapWithStraightBeam->SetStats(kFALSE);
+    hHodoHitMapWithStraightBeam->GetZaxis()->SetTitleOffset(1.6);
     hHodoHitMapWithStraightBeam->Draw("colz");
-    gPad->SetRightMargin(RightMarginForHodoMap);
+    gPad->SetRightMargin(0.16);
 
     figName = TString::Format("%sHodoHitMap_%04d_%04d.%s", ResultDir.c_str(), runnum, subrun, outputFileType.c_str());
     canvas->SaveAs(figName);
@@ -1800,12 +1803,13 @@ void run_proto(int runnum, int fileCount, int shiftHSX1 = 0, int shiftHSY1 = 0, 
         canvas->cd(i + 1);
         hDetectionEff[i]->GetXaxis()->SetNdivisions(NScifiEachHodo);
         hDetectionEff[i]->GetYaxis()->SetNdivisions(NScifiEachHodo);
+        hDetectionEff[i]->GetZaxis()->SetTitleOffset(1.5);
         hDetectionEff[i]->SetStats(kFALSE);
         gStyle->SetPadGridX(1);
         gStyle->SetPadGridY(1);
         hDetectionEff[i]->Draw("colz");
         drawCubeLine("inj", 2);
-        gPad->SetRightMargin(RightMarginForHodoMap);
+        gPad->SetRightMargin(0.15);
     }
     figName = TString::Format("%sDetectionEfficiency_%04d_%04d.%s", ResultDir.c_str(), runnum, subrun, outputFileType.c_str());
     canvas->SaveAs(figName);
@@ -1828,6 +1832,8 @@ void run_proto(int runnum, int fileCount, int shiftHSX1 = 0, int shiftHSY1 = 0, 
     histWidth = 1280;
     histHeight = 1200;
     gStyle->SetPaintTextFormat("3.2f");
+    gStyle->SetPadGridX(0);
+    gStyle->SetPadGridY(0);
     for (int i = 0; i < NCubeCT; i++)
     {
         canvas = new TCanvas("canvas", "", histWidth * nHistHori, histHeight * nHistVert);
@@ -1836,7 +1842,9 @@ void run_proto(int runnum, int fileCount, int shiftHSX1 = 0, int shiftHSY1 = 0, 
         hCrosstalkXYDarkCutMap[i]->GetYaxis()->SetRangeUser(5.5, 12.5);
         hCrosstalkXYDarkCutMap[i]->GetXaxis()->SetNdivisions(7);
         hCrosstalkXYDarkCutMap[i]->GetYaxis()->SetNdivisions(7);
-        gPad->SetRightMargin(RightMarginForHodoMap);
+        gPad->SetRightMargin(0.14);
+        hCrosstalkXYDarkCutMap[i]->GetZaxis()->SetTitleOffset(1.1);
+        hCrosstalkXYDarkCutMap[i]->SetMarkerSize(MarkerSize);
         hCrosstalkXYDarkCutMap[i]->SetStats(kFALSE);
 
         drawCubeLine("inj");
