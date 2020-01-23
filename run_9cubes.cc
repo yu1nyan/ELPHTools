@@ -450,7 +450,14 @@ void run_proto(int runnum, int fileCount, int shiftHSX1 = 0, int shiftHSY1 = 0, 
     const double MinPECenter = -1.5;
     const double MaxPECenter = 98.5;
     const int NBinPECenter = MaxPECenter - MinPECenter;
+    TH1D* hPECubesXY[NCube];
     TH1D* hPECenterForCTXY = new TH1D("hPECenterForCTXY", "PE center (using Z readout);Light yield (ch9) (p.e.);Number of events", NBinPECenter, MinPECenter, MaxPECenter);
+    for(int i=0; i<NCube; ++i)
+    {
+        histName = (boost::format("hPE%sXY") % CubeName[i]).str();
+        histAxis = (boost::format("PE %1% (using Z readout);Light yield of %1% cube(ch%2%) (p.e.);Number of events") % CubeTitle[i] % CubeChMapXY[i]).str();
+        hPECubesXY[i] = new TH1D(histName.c_str(), histAxis.c_str(), NBinPEProto, MinPEProto, MaxPEProto);
+    }
 
 
     TH2D* hHodoHitMapWithProtoHitUp = new TH2D("hHodoHitMapWithProtoHitUp", "Upstream hodoscope hitmap with scinti. hit;Cell # along X;Cell # along Y;Number of events", NScifiEachHodo, MinHodoMap, MaxHodoMap, NScifiEachHodo, MinHodoMap, MaxHodoMap);
@@ -548,7 +555,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1 = 0, int shiftHSY1 = 0, 
     // 0 1 2
     // 3 x 4
     // 5 6 7
-    const int CubeChMapXY[] = { 11, 12, 28, 8, 26, 5, 6, 24 };
+    const int CubeChMapXYAround[] = { 11, 12, 28, 8, 26, 5, 6, 24 };
     const string CubeGeometryName[] = { "UpperLeft", "Upper", "UpperRight", "Left", "Right", "LowerLeft", "Lower", "LowerRight" };
     const string CubeGeometryTitle[] = { "upper left", "upper", "upper right", "left", "right", "lower left", "lower", "lower right" };
     array<TH1D*, NCubeCT> hCrosstalkXY;
@@ -564,28 +571,28 @@ void run_proto(int runnum, int fileCount, int shiftHSX1 = 0, int shiftHSY1 = 0, 
     for (int i = 0; i < NCubeCT; ++i)
     {
         histName = "hCrosstalkXY" + CubeGeometryName[i];
-        histAxis = "L.Y. ratio " + CubeGeometryTitle[i] + "/center (using Z readout);L.Y. " + CubeGeometryTitle[i] + "(ch" + to_string(CubeChMapXY[i]) + ")/center(ch9);Number of events";
+        histAxis = "L.Y. ratio " + CubeGeometryTitle[i] + "/center (using Z readout);L.Y. " + CubeGeometryTitle[i] + "(ch" + to_string(CubeChMapXYAround[i]) + ")/center(ch9);Number of events";
         hCrosstalkXY[i] = new TH1D(histName.c_str(), histAxis.c_str(), NBinCT, MinCT, MaxCT);
 
         histName += "DarkCut";
-        histAxis = "L.Y. ratio " + CubeGeometryTitle[i] + "/center (using Z readout, dark count cut);L.Y. " + CubeGeometryTitle[i] + "(ch" + to_string(CubeChMapXY[i]) + ")/center(ch9);Number of events";
+        histAxis = "L.Y. ratio " + CubeGeometryTitle[i] + "/center (using Z readout, dark count cut);L.Y. " + CubeGeometryTitle[i] + "(ch" + to_string(CubeChMapXYAround[i]) + ")/center(ch9);Number of events";
         hCrosstalkXYDarkCut[i] = new TH1D(histName.c_str(), histAxis.c_str(), NBinCT, MinCT, MaxCT);
 
 
         histName = "hPE" + CubeGeometryName[i] + "ForCTXY";
         // histAxis = "PE left (using Z readout);Light yield (ch8) (p.e.);Number of events";
-        histAxis = (boost::format("PE %s (using Z readout);Light yield (ch%d) (p.e.);Number of events") % CubeGeometryTitle[i] % CubeChMapXY[i]).str();
+        histAxis = (boost::format("PE %s (using Z readout);Light yield (ch%d) (p.e.);Number of events") % CubeGeometryTitle[i] % CubeChMapXYAround[i]).str();
         hPEAroundForCTXY[i] = new TH1D(histName.c_str(), histAxis.c_str(), NBinPEAround, MinPEAround, MaxPEAround);
         for (int j = 0; j < NScifiEachHodo; j++)
         {
             for (int k = 0; k < NScifiEachHodo; k++)
             {
                 histName = (boost::format("hCrosstalkXY%sDarkCutX%dY%d") % CubeGeometryName[i] % (j + 1) % (k + 1)).str();
-                histAxis = (boost::format("L.Y. ratio %s/center (using Z readout, dark count cut, Cell X=%d Y=%d;L.Y. %s(ch%d)/center(ch9);Number of events") % CubeGeometryTitle[i] % (j + 1) % (k + 1) % CubeGeometryTitle[i] % CubeChMapXY[i]).str();
+                histAxis = (boost::format("L.Y. ratio %s/center (using Z readout, dark count cut, Cell X=%d Y=%d;L.Y. %s(ch%d)/center(ch9);Number of events") % CubeGeometryTitle[i] % (j + 1) % (k + 1) % CubeGeometryTitle[i] % CubeChMapXYAround[i]).str();
                 hCrosstalkXYDarkCutEachCell[i][j][k] = new TH1D(histName.c_str(), histAxis.c_str(), NBinCT, MinCT, MaxCT);
 
                 histName = (boost::format("hCrosstalk%sScatterXYX%dY%d") % CubeGeometryName[i] % (j + 1) % (k + 1)).str();
-                histAxis = (boost::format("L.Y. %s vs center (using Z readout, cell X=%d Y=%d);L.Y. center (ch8) (p.e.);L.Y. %s (ch%d) (p.e.);Number of events") % CubeGeometryTitle[i] % (j + 1) % (k + 1) % CubeGeometryTitle[i] % CubeChMapXY[i]).str();
+                histAxis = (boost::format("L.Y. %s vs center (using Z readout, cell X=%d Y=%d);L.Y. center (ch8) (p.e.);L.Y. %s (ch%d) (p.e.);Number of events") % CubeGeometryTitle[i] % (j + 1) % (k + 1) % CubeGeometryTitle[i] % CubeChMapXYAround[i]).str();
                 hCrosstalkScatterXYEachCell[i][j][k] = new TH2D(histName.c_str(), histAxis.c_str(), NBinCTScatter, MinCTScatter, MaxCTScatter, NBinCTScatter, MinCTScatter, MaxCTScatter);
             }
         }
@@ -599,7 +606,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1 = 0, int shiftHSY1 = 0, 
         scatterCTXY[i] = new TGraph();
 
         histName = "hCrosstalkScatterXY" + CubeGeometryName[i];
-        histAxis = (boost::format("L.Y. %s vs center (using Z readout);L.Y. center (ch8) (p.e.);L.Y. %s (ch%d) (p.e.);Number of events") % CubeGeometryTitle[i] % CubeGeometryTitle[i] % CubeChMapXY[i]).str();
+        histAxis = (boost::format("L.Y. %s vs center (using Z readout);L.Y. center (ch8) (p.e.);L.Y. %s (ch%d) (p.e.);Number of events") % CubeGeometryTitle[i] % CubeGeometryTitle[i] % CubeChMapXYAround[i]).str();
         hCrosstalkScatterXY[i] = new TH2D(histName.c_str(), histAxis.c_str(), NBinCTScatter, MinCTScatter, MaxCTScatter, NBinCTScatter, MinCTScatter, MaxCTScatter);
         // hCrosstalkScatterXY[i] = new TH2D(histName.c_str(), histAxis.c_str(), NBinPECenter, MinPECenter, MaxPECenter, NBinPEAround, MinPEAround, MaxPEAround);
     }
@@ -732,6 +739,10 @@ void run_proto(int runnum, int fileCount, int shiftHSX1 = 0, int shiftHSY1 = 0, 
 
     array<bool, NCubeCTDiagOpp> goodEventForCTDiagOpp;
     array<int, NCubeCTDiagOpp> countCTPointDiagOpp = { };
+
+    // キューブヒットフラグ
+    array<bool, NCube> hitToCubeWithStraight;
+    array<bool, NCube> hitToCubeWithGood;
 
 
     // Detection eff.を出すための、読み出し方向ごとのgood event数・すべてのgood event数
@@ -939,6 +950,8 @@ void run_proto(int runnum, int fileCount, int shiftHSX1 = 0, int shiftHSY1 = 0, 
             goodEventForCTStraight = false;
             goodEventForCTCell = false;
             goodEventForCTDiagOpp = { };
+            hitToCubeWithStraight = {};
+            hitToCubeWithGood = {};
 
             // Hodoscope loop
             for (int ch = 0; ch < NScifi; ch++)
@@ -1044,26 +1057,55 @@ void run_proto(int runnum, int fileCount, int shiftHSX1 = 0, int shiftHSY1 = 0, 
             goodEventForCT = goodEventForCTStraight;
             // goodEventForCT = goodEventForCTUpDown;
 
-            // 対角キューブクロストーク用
-            // 左上のキューブにヒット
-            if (isStraightBeam && maxChHodo[static_cast<int> (EHodoscope::HSX2)] <= 4 && maxChHodo[static_cast<int> (EHodoscope::HSY2)] >= 13)
+            // 各キューブへのヒットフラグ
+            // Center
+            if (isStraightBeam && maxChHodo[static_cast<int> (EHodoscope::HSX2)] >= 7 && maxChHodo[static_cast<int> (EHodoscope::HSX2)] <= 10 && maxChHodo[static_cast<int> (EHodoscope::HSY2)] >= 7 && maxChHodo[static_cast<int> (EHodoscope::HSY2)] <= 10)
+            {
+                hitToCubeWithStraight[static_cast<int>(ECubePlace::Center)] = true;
+            }
+            // Upper
+            else if (isStraightBeam && maxChHodo[static_cast<int> (EHodoscope::HSX2)] >= 7 && maxChHodo[static_cast<int> (EHodoscope::HSX2)] <= 10 && maxChHodo[static_cast<int> (EHodoscope::HSY2)] >= 13 && maxChHodo[static_cast<int> (EHodoscope::HSY2)] <= 16)
+            {
+                hitToCubeWithStraight[static_cast<int>(ECubePlace::Upper)] = true;
+            }
+            // Left
+            else if (isStraightBeam && maxChHodo[static_cast<int> (EHodoscope::HSX2)] >= 1 && maxChHodo[static_cast<int> (EHodoscope::HSX2)] <= 4 && maxChHodo[static_cast<int> (EHodoscope::HSY2)] >= 7 && maxChHodo[static_cast<int> (EHodoscope::HSY2)] <= 10)
+            {
+                hitToCubeWithStraight[static_cast<int>(ECubePlace::Left)] = true;
+            }
+            // Right
+            else if (isStraightBeam && maxChHodo[static_cast<int> (EHodoscope::HSX2)] >= 13 && maxChHodo[static_cast<int> (EHodoscope::HSX2)] <= 16 && maxChHodo[static_cast<int> (EHodoscope::HSY2)] >= 7 && maxChHodo[static_cast<int> (EHodoscope::HSY2)] <= 10)
+            {
+                hitToCubeWithStraight[static_cast<int>(ECubePlace::Right)] = true;
+            }
+            // Lower
+            else if (isStraightBeam && maxChHodo[static_cast<int> (EHodoscope::HSX2)] >= 7 && maxChHodo[static_cast<int> (EHodoscope::HSX2)] <= 10 && maxChHodo[static_cast<int> (EHodoscope::HSY2)] >= 1 && maxChHodo[static_cast<int> (EHodoscope::HSY2)] <= 4)
+            {
+                hitToCubeWithStraight[static_cast<int>(ECubePlace::Lower)] = true;
+            }
+            // UpperLeft
+            else if (isStraightBeam && maxChHodo[static_cast<int> (EHodoscope::HSX2)] >= 1 && maxChHodo[static_cast<int> (EHodoscope::HSX2)] <= 4 && maxChHodo[static_cast<int> (EHodoscope::HSY2)] >= 13 && maxChHodo[static_cast<int> (EHodoscope::HSY2)] <= 16)
             {
                 goodEventForCTDiagOpp[0] = true;
+                hitToCubeWithStraight[static_cast<int>(ECubePlace::UpperLeft)] = true;
             }
-            // 右上
-            else if (isStraightBeam && maxChHodo[static_cast<int> (EHodoscope::HSX2)] >= 13 && maxChHodo[static_cast<int> (EHodoscope::HSY2)] >= 13)
+            // UpperRight
+            else if (isStraightBeam && maxChHodo[static_cast<int> (EHodoscope::HSX2)] >= 13 && maxChHodo[static_cast<int> (EHodoscope::HSX2)] <= 16 && maxChHodo[static_cast<int> (EHodoscope::HSY2)] >= 13 && maxChHodo[static_cast<int> (EHodoscope::HSY2)] <= 16)
             {
                 goodEventForCTDiagOpp[2] = true;
+                hitToCubeWithStraight[static_cast<int>(ECubePlace::UpperRight)] = true;
             }
-            // 左下
-            else if (isStraightBeam && maxChHodo[static_cast<int> (EHodoscope::HSX2)] <= 4 && maxChHodo[static_cast<int> (EHodoscope::HSY2)] <= 4)
+            // LowerLeft
+            else if (isStraightBeam && maxChHodo[static_cast<int> (EHodoscope::HSX2)] >= 1 && maxChHodo[static_cast<int> (EHodoscope::HSX2)] <= 4 && maxChHodo[static_cast<int> (EHodoscope::HSY2)] >= 1 && maxChHodo[static_cast<int> (EHodoscope::HSY2)] <= 4)
             {
                 goodEventForCTDiagOpp[3] = true;
+                hitToCubeWithStraight[static_cast<int>(ECubePlace::LowerLeft)] = true;
             }
-            // 右下
-            else if (isStraightBeam && maxChHodo[static_cast<int> (EHodoscope::HSX2)] >= 13 && maxChHodo[static_cast<int> (EHodoscope::HSY2)] <= 4)
+            // LowerRight
+            else if (isStraightBeam && maxChHodo[static_cast<int> (EHodoscope::HSX2)] >= 13 && maxChHodo[static_cast<int> (EHodoscope::HSX2)] <= 16 && maxChHodo[static_cast<int> (EHodoscope::HSY2)] >= 1 && maxChHodo[static_cast<int> (EHodoscope::HSY2)] <= 4)
             {
                 goodEventForCTDiagOpp[1] = true;
+                hitToCubeWithStraight[static_cast<int>(ECubePlace::LowerRight)] = true;
             }
 
             // CellごとのCross talk分布出す用
@@ -1165,7 +1207,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1 = 0, int shiftHSY1 = 0, 
             // leftPEXZ = pe[static_cast<int> (EEasiroc::Scinti2)][40];
             for (int i = 0; i < NCubeCT; i++)
             {
-                aroundPEXY[i] = pe[static_cast<int> (EEasiroc::Scinti1)][CubeChMapXY[i]];
+                aroundPEXY[i] = pe[static_cast<int> (EEasiroc::Scinti1)][CubeChMapXYAround[i]];
             }
 
 
@@ -1195,7 +1237,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1 = 0, int shiftHSY1 = 0, 
                     }
                 }
 
-                hPECenterForCTXY->Fill(centerPEXY);
+                // hPECenterForCTXY->Fill(centerPEXY);
 
                 countCTPoint++;
             }
@@ -1219,6 +1261,15 @@ void run_proto(int runnum, int fileCount, int shiftHSX1 = 0, int shiftHSY1 = 0, 
                         hCrosstalkXYDarkCutDiagOpp[i]->Fill(noHitPEXY / hitPEXY);
                     }
                     break;
+                }
+            }
+
+            // 各キューブの光量 (w/ straight hit events)
+            for(int i=0; i<NCube; ++i)
+            {
+                if(hitToCubeWithStraight[i])
+                {
+                    hPECubesXY[i]->Fill(pe[static_cast<int> (EEasiroc::Scinti1)][CubeChMapXY[i]]);
                 }
             }
 
@@ -1528,21 +1579,20 @@ void run_proto(int runnum, int fileCount, int shiftHSX1 = 0, int shiftHSY1 = 0, 
     }
 
 
-    // center L.Y. for crosstalk
+    // L.Y. histograms for each cubes
     // TFile histsCenter(TString::Format("%sPECenter_%04d_%04d.root", ResultDir.c_str(), runnum, subrun), "RECREATE");
     // canvas = new TCanvas();
-    double maxBin = hPECenterForCTXY->GetMaximumBin() + MinPECenter;
-    hPECenterForCTXY->Fit("landau", FitOption, "", maxBin - 7, maxBin + 12);
-    changeStatsBoxSize(hPECenterForCTXY, 0.65, 0.98, 0.65, 0.92);
-    changeOptionStat(hPECenterForCTXY, 10);
-    changeOptionFit(hPECenterForCTXY, 110);
-    // hPECenterForCTXY->Draw();
-    // hPECenterForCTXY->Write();
-    // histsCenter.Close();
-    figName = TString::Format("%sPECenter_%04d_%04d.%s", ResultDir.c_str(), runnum, subrun, outputFileType.c_str());
-    SaveHist(hPECenterForCTXY, figName);
-    // canvas->SaveAs(figName);
-    // canvas->Clear();
+    for (int i=0; i<NCube; ++i)
+    {
+        double maxBin = hPECubesXY[i]->GetMaximumBin() + MinPECenter;
+        hPECubesXY[i]->Fit("landau", FitOption, "", maxBin - 7, maxBin + 18);
+        changeStatsBoxSize(hPECubesXY[i], 0.65, 0.98, 0.65, 0.92);
+        changeOptionStat(hPECubesXY[i], 10);
+        changeOptionFit(hPECubesXY[i], 110);
+        figName = TString::Format("%sPE%s_%04d_%04d.%s", ResultDir.c_str(), CubeName[i].c_str(), runnum, subrun, outputFileType.c_str());
+        SaveHist(hPECubesXY[i], figName);
+    }
+
 
     // around L.Y. for crosstalk
     TFile histsAround(TString::Format("%sPEAround_%04d_%04d.root", ResultDir.c_str(), runnum, subrun), "RECREATE");
@@ -1620,7 +1670,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1 = 0, int shiftHSY1 = 0, 
         gStyle->SetOptFit(111);
         scatterCTXY[i]->Fit("pol1", FitOption, "", MinPEScatterCTCenter, MaxPEScatterCTCenter);
         scatterCTXY[i]->SetTitle(TString::Format("L.Y. %s vs center (using Z readout)", CubeGeometryTitle[i].c_str()));
-        scatterCTXY[i]->GetYaxis()->SetTitle(TString::Format("L.Y. %s (ch%d) (p.e.)", CubeGeometryTitle[i].c_str(), CubeChMapXY[i]));
+        scatterCTXY[i]->GetYaxis()->SetTitle(TString::Format("L.Y. %s (ch%d) (p.e.)", CubeGeometryTitle[i].c_str(), CubeChMapXYAround[i]));
         scatterCTXY[i]->GetXaxis()->SetTitle("L.Y. center (ch8) (p.e.)");
         scatterCTXY[i]->GetXaxis()->SetRangeUser(MinPEScatterCTCenter, MaxPEScatterCTCenter);
         scatterCTXY[i]->GetYaxis()->SetRangeUser(MinPEScatterCTAround, MaxPEScatterCTAround);

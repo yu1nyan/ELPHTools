@@ -47,6 +47,14 @@ const int NChEasiroc = 64;
 const int NChEasirocHalf = 32;
 const int NSurfaceScinti = 3;
 const int NScintiOneSide = 5;
+const int NCube = 9;
+enum class ECubePlace
+{
+    UpperLeft, Upper, UpperRight, Left, Center, Right, LowerLeft, Lower, LowerRight
+};
+const string CubeName[] = { "UpperLeft", "Upper", "UpperRight", "Left", "Center", "Right", "LowerLeft", "Lower", "LowerRight" };
+const string CubeTitle[] = { "upper left", "upper", "upper right", "left", "center", "right", "lower left", "lower", "lower right" };
+const int CubeChMapXY[] = { 11, 12, 28, 8, 9, 26, 5, 6, 24 };
 
 const double HodoWidth = 1.7;   // (mm)
 
