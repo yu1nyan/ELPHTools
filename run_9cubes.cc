@@ -271,10 +271,10 @@ void run_proto(int runnum, int fileCount, int shiftHSX1 = 0, int shiftHSY1 = 0, 
     // const int hodoLowYForCT = 8;
     // const int hodoHighYForCT = 9;
 
-    const int hodoLowXForCTCell = 1;
-    const int hodoHighXForCTCell = 16;
-    const int hodoLowYForCTCell = 1;
-    const int hodoHighYForCTCell = 16;
+    const int hodoLowXForCTCell = 6;
+    const int hodoHighXForCTCell = 10;
+    const int hodoLowYForCTCell = 7;
+    const int hodoHighYForCTCell = 11;
     //
     // const int hodoLowXForCTCell = 7;
     // const int hodoHighXForCTCell = 10;
