@@ -91,12 +91,11 @@ void SaveHist(TH1* hist, TString outputFileDir, TString drawOption = "", bool se
     {
         canvas = new TCanvas("canvas", "", histWidth, histHeight);
     }
-
+    hist->Draw(drawOption);
     if (setLogy)
     {
         canvas->SetLogy();
     }
-    hist->Draw(drawOption);
     canvas->SaveAs(outputFileDir);
     canvas->Clear();
 }
@@ -110,6 +109,7 @@ void SaveHodoMap(TH2* hist, TString outputFileDir, int nCellOneSide)
     gPad->SetRightMargin(0.17);
     hist->GetZaxis()->SetTitleOffset(1.4);
     hist->SetStats(kFALSE);
+    hist->SetMarkerSize(MarkerSize);
     canvas->SaveAs(outputFileDir);
     canvas->Clear();
 }
@@ -118,6 +118,8 @@ void changeStatsBoxSize(TH1* hist, double x1, double x2, double y1, double y2)
 {
     gPad->Update();
     TPaveStats* st = (TPaveStats*) hist->FindObject("stats");
+    if (!st)
+        return;
     st->SetX1NDC(x1);
     st->SetX2NDC(x2);
     st->SetY1NDC(y1);
@@ -128,6 +130,8 @@ void changeOptionStat(TH1* hist, int option)
 {
     gPad->Update();
     TPaveStats* st = (TPaveStats*) hist->FindObject("stats");
+    if (!st)
+        return;
     st->SetOptStat(option);
     st->Draw();
 }
@@ -136,6 +140,8 @@ void changeOptionFit(TH1* hist, int option)
 {
     gPad->Update();
     TPaveStats* st = (TPaveStats*) hist->FindObject("stats");
+    if (!st)
+        return;
     st->SetOptFit(option);
     st->Draw();
 }
@@ -304,8 +310,6 @@ void run_proto(int runnum, int fileCount, int shiftHSX1 = 0, int shiftHSY1 = 0, 
 
     const TString FitOption = "Q";
 
-    // const int NCh2Cubes = 5;
-    const int NChOneSide = 5;
 
 
     // recycled variables
@@ -389,7 +393,6 @@ void run_proto(int runnum, int fileCount, int shiftHSX1 = 0, int shiftHSY1 = 0, 
     }
 
     TH2D* hProto[NSurfaceScinti];
-    const Int_t NScintiOneSide = 5;
     const double MinProtoMap = 0.5;
     const double MaxProtoMap = 5.5;
     const double MaxPEProto2D = 50.;
@@ -452,7 +455,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1 = 0, int shiftHSY1 = 0, 
     const int NBinPECenter = MaxPECenter - MinPECenter;
     TH1D* hPECubesXY[NCube];
     TH1D* hPECenterForCTXY = new TH1D("hPECenterForCTXY", "PE center (using Z readout);Light yield (ch9) (p.e.);Number of events", NBinPECenter, MinPECenter, MaxPECenter);
-    for(int i=0; i<NCube; ++i)
+    for (int i = 0; i < NCube; ++i)
     {
         histName = (boost::format("hPE%sXY") % CubeName[i]).str();
         histAxis = (boost::format("PE %1% (using Z readout);Light yield of %1% cube(ch%2%) (p.e.);Number of events") % CubeTitle[i] % CubeChMapXY[i]).str();
@@ -468,7 +471,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1 = 0, int shiftHSY1 = 0, 
 
     TH2D* hHodoHitMapWithStraightBeam = new TH2D("hHodoHitMapWithStraightBeam", "Hodoscope hitmap with straight beam event;Cell # along X;Cell # along Y;Number of events", NScifiEachHodo, MinHodoMap, MaxHodoMap, NScifiEachHodo, MinHodoMap, MaxHodoMap);
 
-    TH1D* hPEProtoEach[NSurfaceScinti][NChOneSide][NChOneSide];
+    TH1D* hPEProtoEach[NSurfaceScinti][NScintiOneSide][NScintiOneSide];
 
     vector<tuple<EEasiroc, int, EScintiSurface, int, int>> usingProtoCh;    // 使用チャンネルを格納 <EASIROC ch, プロトタイプ面, cube # horizontal, cube # vertical>
     vector<tuple<EEasiroc, int, EScintiSurface, int, int>> usingProtoChForAllOutput;
@@ -804,7 +807,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1 = 0, int shiftHSY1 = 0, 
         // double chi2_ndf_1pe[NEasiroc][NChEasiroc];
 
         int inputCh;
-        double mp, sp, cnp, m1, s1, cn1, g;
+        string mp, sp, cnp, m1, s1, cn1, g;
 
         TString pt2s_calibname = TString::Format("%s%s.tsv", calibfile_dir.c_str(), pt2sfile_calib.c_str());
         ifstream fin1(pt2s_calibname);
@@ -815,39 +818,39 @@ void run_proto(int runnum, int fileCount, int shiftHSX1 = 0, int shiftHSY1 = 0, 
         }
         while (fin1 >> inputCh >> mp >> sp >> cnp >> m1 >> s1 >> cn1 >> g)
         {
-            mean_ped[0][inputCh] = mp;
+            mean_ped[0][inputCh] = stod(mp);
             // sigma_ped[0][inputCh]    = sp;
             // chi2_ndf_ped[0][inputCh] = cnp;
             // mean_1pe[0][inputCh]     = m1;
             // sigma_1pe[0][inputCh]    = s1;
             // chi2_ndf_1pe[0][inputCh] = cn1;
-            gain[0][inputCh] = g;
+            gain[0][inputCh] = stod(g);
         }
 
         TString pt1s_calibname = TString::Format("%s%s.tsv", calibfile_dir.c_str(), pt1sfile_calib.c_str());
         ifstream fin2(pt1s_calibname);
         while (fin2 >> inputCh >> mp >> sp >> cnp >> m1 >> s1 >> cn1 >> g)
         {
-            mean_ped[1][inputCh] = mp;
+            mean_ped[1][inputCh] = stod(mp);
             // sigma_ped[1][inputCh]    = sp;
             // chi2_ndf_ped[1][inputCh] = cnp;
             // mean_1pe[1][inputCh]     = m1;
             // sigma_1pe[1][inputCh]    = s1;
             // chi2_ndf_1pe[1][inputCh] = cn1;
-            gain[1][inputCh] = g;
+            gain[1][inputCh] = stod(g);
         }
 
         TString hs_calibname = TString::Format("%s%s.tsv", calibfile_dir.c_str(), hsfile_calib.c_str());
         ifstream fin3(hs_calibname);
         while (fin3 >> inputCh >> mp >> sp >> cnp >> m1 >> s1 >> cn1 >> g)
         {
-            mean_ped[2][inputCh] = mp;
+            mean_ped[2][inputCh] = stod(mp);
             // sigma_ped[2][inputCh]    = sp;
             // chi2_ndf_ped[2][inputCh] = cnp;
             // mean_1pe[2][inputCh]     = m1;
             // sigma_1pe[2][inputCh]    = s1;
             // chi2_ndf_1pe[2][inputCh] = cn1;
-            gain[2][inputCh] = g;
+            gain[2][inputCh] = stod(g);
         }
 
         TChain* tree1 = new TChain("tree");
@@ -950,8 +953,8 @@ void run_proto(int runnum, int fileCount, int shiftHSX1 = 0, int shiftHSY1 = 0, 
             goodEventForCTStraight = false;
             goodEventForCTCell = false;
             goodEventForCTDiagOpp = { };
-            hitToCubeWithStraight = {};
-            hitToCubeWithGood = {};
+            hitToCubeWithStraight = { };
+            hitToCubeWithGood = { };
 
             // Hodoscope loop
             for (int ch = 0; ch < NScifi; ch++)
@@ -1061,51 +1064,51 @@ void run_proto(int runnum, int fileCount, int shiftHSX1 = 0, int shiftHSY1 = 0, 
             // Center
             if (isStraightBeam && maxChHodo[static_cast<int> (EHodoscope::HSX2)] >= 7 && maxChHodo[static_cast<int> (EHodoscope::HSX2)] <= 10 && maxChHodo[static_cast<int> (EHodoscope::HSY2)] >= 7 && maxChHodo[static_cast<int> (EHodoscope::HSY2)] <= 10)
             {
-                hitToCubeWithStraight[static_cast<int>(ECubePlace::Center)] = true;
+                hitToCubeWithStraight[static_cast<int> (ECubePlace::Center)] = true;
             }
             // Upper
             else if (isStraightBeam && maxChHodo[static_cast<int> (EHodoscope::HSX2)] >= 7 && maxChHodo[static_cast<int> (EHodoscope::HSX2)] <= 10 && maxChHodo[static_cast<int> (EHodoscope::HSY2)] >= 13 && maxChHodo[static_cast<int> (EHodoscope::HSY2)] <= 16)
             {
-                hitToCubeWithStraight[static_cast<int>(ECubePlace::Upper)] = true;
+                hitToCubeWithStraight[static_cast<int> (ECubePlace::Upper)] = true;
             }
             // Left
             else if (isStraightBeam && maxChHodo[static_cast<int> (EHodoscope::HSX2)] >= 1 && maxChHodo[static_cast<int> (EHodoscope::HSX2)] <= 4 && maxChHodo[static_cast<int> (EHodoscope::HSY2)] >= 7 && maxChHodo[static_cast<int> (EHodoscope::HSY2)] <= 10)
             {
-                hitToCubeWithStraight[static_cast<int>(ECubePlace::Left)] = true;
+                hitToCubeWithStraight[static_cast<int> (ECubePlace::Left)] = true;
             }
             // Right
             else if (isStraightBeam && maxChHodo[static_cast<int> (EHodoscope::HSX2)] >= 13 && maxChHodo[static_cast<int> (EHodoscope::HSX2)] <= 16 && maxChHodo[static_cast<int> (EHodoscope::HSY2)] >= 7 && maxChHodo[static_cast<int> (EHodoscope::HSY2)] <= 10)
             {
-                hitToCubeWithStraight[static_cast<int>(ECubePlace::Right)] = true;
+                hitToCubeWithStraight[static_cast<int> (ECubePlace::Right)] = true;
             }
             // Lower
             else if (isStraightBeam && maxChHodo[static_cast<int> (EHodoscope::HSX2)] >= 7 && maxChHodo[static_cast<int> (EHodoscope::HSX2)] <= 10 && maxChHodo[static_cast<int> (EHodoscope::HSY2)] >= 1 && maxChHodo[static_cast<int> (EHodoscope::HSY2)] <= 4)
             {
-                hitToCubeWithStraight[static_cast<int>(ECubePlace::Lower)] = true;
+                hitToCubeWithStraight[static_cast<int> (ECubePlace::Lower)] = true;
             }
             // UpperLeft
             else if (isStraightBeam && maxChHodo[static_cast<int> (EHodoscope::HSX2)] >= 1 && maxChHodo[static_cast<int> (EHodoscope::HSX2)] <= 4 && maxChHodo[static_cast<int> (EHodoscope::HSY2)] >= 13 && maxChHodo[static_cast<int> (EHodoscope::HSY2)] <= 16)
             {
                 goodEventForCTDiagOpp[0] = true;
-                hitToCubeWithStraight[static_cast<int>(ECubePlace::UpperLeft)] = true;
+                hitToCubeWithStraight[static_cast<int> (ECubePlace::UpperLeft)] = true;
             }
             // UpperRight
             else if (isStraightBeam && maxChHodo[static_cast<int> (EHodoscope::HSX2)] >= 13 && maxChHodo[static_cast<int> (EHodoscope::HSX2)] <= 16 && maxChHodo[static_cast<int> (EHodoscope::HSY2)] >= 13 && maxChHodo[static_cast<int> (EHodoscope::HSY2)] <= 16)
             {
                 goodEventForCTDiagOpp[2] = true;
-                hitToCubeWithStraight[static_cast<int>(ECubePlace::UpperRight)] = true;
+                hitToCubeWithStraight[static_cast<int> (ECubePlace::UpperRight)] = true;
             }
             // LowerLeft
             else if (isStraightBeam && maxChHodo[static_cast<int> (EHodoscope::HSX2)] >= 1 && maxChHodo[static_cast<int> (EHodoscope::HSX2)] <= 4 && maxChHodo[static_cast<int> (EHodoscope::HSY2)] >= 1 && maxChHodo[static_cast<int> (EHodoscope::HSY2)] <= 4)
             {
                 goodEventForCTDiagOpp[3] = true;
-                hitToCubeWithStraight[static_cast<int>(ECubePlace::LowerLeft)] = true;
+                hitToCubeWithStraight[static_cast<int> (ECubePlace::LowerLeft)] = true;
             }
             // LowerRight
             else if (isStraightBeam && maxChHodo[static_cast<int> (EHodoscope::HSX2)] >= 13 && maxChHodo[static_cast<int> (EHodoscope::HSX2)] <= 16 && maxChHodo[static_cast<int> (EHodoscope::HSY2)] >= 1 && maxChHodo[static_cast<int> (EHodoscope::HSY2)] <= 4)
             {
                 goodEventForCTDiagOpp[1] = true;
-                hitToCubeWithStraight[static_cast<int>(ECubePlace::LowerRight)] = true;
+                hitToCubeWithStraight[static_cast<int> (ECubePlace::LowerRight)] = true;
             }
 
             // CellごとのCross talk分布出す用
@@ -1124,7 +1127,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1 = 0, int shiftHSY1 = 0, 
 
             // Good event ここまで
 
-            // 使用していないチャンネルの光量も出力
+            // 使用していないチャンネル含めのすべてのチャンネルの光量も出力
             if (isStraightBeam)
             {
                 for (auto ch : usingProtoChForAllOutput)
@@ -1144,13 +1147,13 @@ void run_proto(int runnum, int fileCount, int shiftHSX1 = 0, int shiftHSY1 = 0, 
 
 
             // prototype loop
-            for (auto itr = usingProtoCh.begin(); itr != usingProtoCh.end(); ++itr)
+            for (auto ch : usingProtoCh)
             {
-                EEasiroc easiroc = get<0> (*itr);
-                int easirocCh = get<1> (*itr);
-                EScintiSurface surface = get<2> (*itr);
-                int horizontal = get<3> (*itr);
-                int vertical = get<4> (*itr);
+                EEasiroc easiroc = get<0> (ch);
+                int easirocCh = get<1> (ch);
+                EScintiSurface surface = get<2> (ch);
+                int horizontal = get<3> (ch);
+                int vertical = get<4> (ch);
                 #ifdef DEBUG
                     cout << "usingProtoCh: " << easirocCh << endl;
                 #endif
@@ -1158,7 +1161,6 @@ void run_proto(int runnum, int fileCount, int shiftHSX1 = 0, int shiftHSY1 = 0, 
                 // pe[static_cast <int>(easiroc)][easirocCh] = double(floor(pe[static_cast <int>(easiroc)][easirocCh] * 10) / 10);
 
                 hProto[static_cast<int> (surface)]->SetBinContent(horizontal, vertical, pe[static_cast<int> (easiroc)][easirocCh]);
-
 
                 if (pe[static_cast<int> (easiroc)][easirocCh] > ProtoPEThreshold)
                 {
@@ -1265,9 +1267,9 @@ void run_proto(int runnum, int fileCount, int shiftHSX1 = 0, int shiftHSY1 = 0, 
             }
 
             // 各キューブの光量 (w/ straight hit events)
-            for(int i=0; i<NCube; ++i)
+            for (int i = 0; i < NCube; ++i)
             {
-                if(hitToCubeWithStraight[i])
+                if (hitToCubeWithStraight[i])
                 {
                     hPECubesXY[i]->Fill(pe[static_cast<int> (EEasiroc::Scinti1)][CubeChMapXY[i]]);
                 }
@@ -1293,7 +1295,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1 = 0, int shiftHSY1 = 0, 
 
                 // Center cubeの光量が一番多いとき
                 // if (maxChProtoXOfXY == 3 && maxChProtoYOfXY == 3)
-                if(true)
+                if (true)
                 {
                     for (int i = 0; i < NCubeCT; i++)
                     {
@@ -1383,10 +1385,12 @@ void run_proto(int runnum, int fileCount, int shiftHSX1 = 0, int shiftHSY1 = 0, 
         }
     }
 
+    cout << "Finish the analysis. Drawing histograms..." << endl;
+    #ifdef DEBUG
+        cout << endl << "--------------event loop end--------------" << endl << "total event: " << totalEvt << endl;
+    #endif
 
     // Draw Histograms
-
-
     int nHistHori = 4;
     int nHistVert = 2;
     int histWidth = 800;
@@ -1397,7 +1401,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1 = 0, int shiftHSY1 = 0, 
 
     const double TitleSize = 0.03;
     const double LabelSize = 0.04;
-    const double MarkerSize = 2.2;
+
 
     // hit rate
     gStyle->SetPaintTextFormat("3.0f");
@@ -1472,13 +1476,25 @@ void run_proto(int runnum, int fileCount, int shiftHSX1 = 0, int shiftHSY1 = 0, 
 
 
     // Light yield (each prototype channel)
-    for (auto itr = usingProtoChForAllOutput.begin(); itr != usingProtoChForAllOutput.end(); ++itr)
+    double darkRateSum = 0;
+    int nUnusedCh = 0;
+    TH2D* hDarkRateMPPC[NSurfaceScinti];
+    for(int i=0; i<NSurfaceScinti; ++i)
     {
-        EEasiroc easiroc = get<0> (*itr);
-        int easirocCh = get<1> (*itr);
-        EScintiSurface surface = get<2> (*itr);
-        int horizontal = get<3> (*itr);
-        int vertical = get<4> (*itr);
+        histName = "hDarkRateMPPC" + SurfaceName[i];
+        histAxis = (boost::format("Dark rate of MPPC (%s readout);horizontal;vertical;Dark rate (%%)") % ReadoutSurfaceName[i]).str();
+        hDarkRateMPPC[i] = new TH2D(histName.c_str(), histAxis.c_str(), 5, 0.5, 5.5, 5, 0.5, 5.5);
+    }
+    for (auto ch : usingProtoChForAllOutput)
+    {
+        EEasiroc easiroc = get<0> (ch);
+        int easirocCh = get<1> (ch);
+        EScintiSurface surface = get<2> (ch);
+        int horizontal = get<3> (ch);
+        int vertical = get<4> (ch);
+
+        if (horizontal == 0 || vertical == 0)
+            continue;
 
         string chName;
         if (surface == EScintiSurface::XY)
@@ -1495,14 +1511,39 @@ void run_proto(int runnum, int fileCount, int shiftHSX1 = 0, int shiftHSY1 = 0, 
         }
 
 
-        canvas = new TCanvas();
+        // canvas = new TCanvas();
         // gPad->SetLogy();
-        hPEProtoEach[static_cast<int> (surface)][horizontal - 1][vertical - 1]->Draw();
+        // hPEProtoEach[static_cast<int> (surface)][horizontal - 1][vertical - 1]->Draw();
+
 
         figName = TString::Format("%sPE_%s_%04d_%04d.%s", ScintiPEDir.c_str(), chName.c_str(), runnum, subrun, outputFileType.c_str());
-        canvas->SaveAs(figName);
-        canvas->Clear();
+        SaveHist(hPEProtoEach[static_cast<int> (surface)][horizontal - 1][vertical - 1], figName);
+        // canvas->Clear();
+
+
+        int darkCount = 0;
+        for (int i = 3; i <= 10; ++i)
+        {
+            // cout <<"Bin" << i << ": " << hPEProtoEach[static_cast<int>(EScintiSurface::XY)][0][0]->GetBinContent(i) << endl;
+            darkCount += hPEProtoEach[static_cast<int> (surface)][horizontal - 1][vertical - 1]->GetBinContent(i);
+        }
+        double darkRate = (double) darkCount / hPEProtoEach[static_cast<int> (surface)][horizontal - 1][vertical - 1]->GetEntries();
+
+        ToScintiCh* toScintiCh = new ToScintiCh(EScintiType::NineCubes);
+        if (!toScintiCh->isConnected(easiroc, easirocCh))
+        {
+            darkRateSum += darkRate;
+            nUnusedCh += 1;
+            cout << "Dark rate of " << chName << ": " << darkRate << endl;
+            hDarkRateMPPC[static_cast<int> (surface)]->SetBinContent(horizontal, vertical, darkRate*100);
+        }
     }
+
+    cout << "Average of dark rate: " << darkRateSum / nUnusedCh << endl;
+
+
+
+
 
 
     // Light yield (each hodoscope channel)
@@ -1518,9 +1559,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1 = 0, int shiftHSY1 = 0, 
     }
 
 
-    #ifdef DEBUG
-        cout << endl << "--------------event loop end--------------" << endl << "total event: " << totalEvt << endl;
-    #endif
+
 
 
     // Hit multiplicity
@@ -1573,8 +1612,9 @@ void run_proto(int runnum, int fileCount, int shiftHSX1 = 0, int shiftHSY1 = 0, 
         // gStyle->SetOptFit(111);
         changeStatsBoxSize(hCrosstalkXYDarkCut[i], 0.6, 0.99, 0.65, 0.935);
         figName = TString::Format("%sCrosstalkDarkCut%d_%04d_%04d.%s", ResultDir.c_str(), i, runnum, subrun, outputFileType.c_str());
-        canvas->SetLogy();
-        canvas->SaveAs(figName);
+        // canvas->SetLogy();
+        // canvas->SaveAs(figName);
+        SaveHist(hCrosstalkXYDarkCut[i], figName, "", true);
         canvas->Clear();
     }
 
@@ -1582,9 +1622,10 @@ void run_proto(int runnum, int fileCount, int shiftHSX1 = 0, int shiftHSY1 = 0, 
     // L.Y. histograms for each cubes
     // TFile histsCenter(TString::Format("%sPECenter_%04d_%04d.root", ResultDir.c_str(), runnum, subrun), "RECREATE");
     // canvas = new TCanvas();
-    for (int i=0; i<NCube; ++i)
+    for (int i = 0; i < NCube; ++i)
     {
         double maxBin = hPECubesXY[i]->GetMaximumBin() + MinPECenter;
+        hPECubesXY[i]->Draw();
         hPECubesXY[i]->Fit("landau", FitOption, "", maxBin - 7, maxBin + 18);
         changeStatsBoxSize(hPECubesXY[i], 0.65, 0.98, 0.65, 0.92);
         changeOptionStat(hPECubesXY[i], 10);
@@ -1595,20 +1636,22 @@ void run_proto(int runnum, int fileCount, int shiftHSX1 = 0, int shiftHSY1 = 0, 
 
 
     // around L.Y. for crosstalk
-    TFile histsAround(TString::Format("%sPEAround_%04d_%04d.root", ResultDir.c_str(), runnum, subrun), "RECREATE");
+    // TFile histsAround(TString::Format("%sPEAround_%04d_%04d.root", ResultDir.c_str(), runnum, subrun), "RECREATE");
     for (int i = 0; i < NCubeCT; i++)
     {
         canvas = new TCanvas();
         // hPEAroundForCTXY[i]->Fit();
         hPEAroundForCTXY[i]->Draw();
-        hPEAroundForCTXY[i]->Write();
+        hPEAroundForCTXY[i]->Draw("same text90");
+        // hPEAroundForCTXY[i]->Write();
         changeOptionStat(hPEAroundForCTXY[i], 2210);
         changeStatsBoxSize(hPEAroundForCTXY[i], 0.6, 0.99, 0.65, 0.935);
         figName = TString::Format("%sPEAround%d_%04d_%04d.%s", ResultDir.c_str(), i, runnum, subrun, outputFileType.c_str());
         canvas->SaveAs(figName);
+        // SaveHist(hPEAroundForCTXY[i], figName, "text90");
         canvas->Clear();
     }
-    histsAround.Close();
+    // histsAround.Close();
 
 
     // // left only
@@ -1865,6 +1908,13 @@ void run_proto(int runnum, int fileCount, int shiftHSX1 = 0, int shiftHSY1 = 0, 
     canvas->SaveAs(figName);
     canvas->Clear();
 
+    // Dark rate of MPPC each ch
+    for(int i=0; i<NSurfaceScinti; ++i)
+    {
+        figName = TString::Format("%sDarkRateMPPC%d_%04d_%04d.%s", ResultDir.c_str(), i, runnum, subrun, outputFileType.c_str());
+        SaveHodoMap(hDarkRateMPPC[i], figName, 5);
+    }
+
 
     const Int_t NRGBs = 3;
     const Int_t NCont = 255;
@@ -1903,6 +1953,8 @@ void run_proto(int runnum, int fileCount, int shiftHSX1 = 0, int shiftHSY1 = 0, 
         canvas->SaveAs(figName);
         canvas->Clear();
     }
+
+
 }
 
 int main(int argc, char** argv)

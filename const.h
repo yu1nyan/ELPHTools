@@ -66,3 +66,5 @@ const double HodoWidth = 1.7;   // (mm)
 
 const double RightMarginForHodoMap = 0.15;
 const double TitleOffsetTH2 = 1.6;
+
+const double MarkerSize = 2.2;

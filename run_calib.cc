@@ -210,6 +210,7 @@ void run_calib(string type, int nrun, int nsub, int file_count, int low, int hig
 
         // c1->Divide(8,4);
 
+
         for (int ch = 0; ch < 64; ch++)
         {
             if (!toScintiCh->isConnected(easiroc, ch) && easiroc != EEasiroc::Hodoscope)
@@ -335,7 +336,15 @@ void run_calib(string type, int nrun, int nsub, int file_count, int low, int hig
             h1[ch]->Draw();
             gPad->SetLogy();
             c1->SaveAs(name2);
+            // h1[ch]->Write();
         }
+
+        TFile histsADC(TString::Format("%s/adccount.root", calibdir_s.c_str()), "RECREATE");
+        for(int ch=0; ch<63; ++ch)
+        {
+            h1[ch]->Write();
+        }
+        histsADC.Close();
 
         c2->cd();
         TH1F* h2_2 = new TH1F("h2_2_ch32-63", "", 100, 0., 100.);
