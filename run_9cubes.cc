@@ -102,6 +102,9 @@ void SaveHist(TH1* hist, TString outputFileDir, TString drawOption = "", bool se
 
 void SaveHodoMap(TH2* hist, TString outputFileDir, int nCellOneSide)
 {
+    gStyle->SetPadGridX(0);
+    gStyle->SetPadGridY(0);
+
     TCanvas* canvas = new TCanvas("canvas", "", 1280, 1200);
     hist->Draw("text colz");
     hist->GetXaxis()->SetNdivisions(nCellOneSide);
@@ -1534,7 +1537,8 @@ void run_proto(int runnum, int fileCount, int shiftHSX1 = 0, int shiftHSY1 = 0, 
         {
             darkRateSum += darkRate;
             nUnusedCh += 1;
-            cout << "Dark rate of " << chName << ": " << darkRate << endl;
+            cout << "Number of dark events of " << chName << ": " << darkCount;
+            cout << ", so dark rate: " << darkRate << endl;
             hDarkRateMPPC[static_cast<int> (surface)]->SetBinContent(horizontal, vertical, darkRate*100);
         }
     }
@@ -1641,6 +1645,7 @@ void run_proto(int runnum, int fileCount, int shiftHSX1 = 0, int shiftHSY1 = 0, 
     {
         canvas = new TCanvas();
         // hPEAroundForCTXY[i]->Fit();
+        hPEAroundForCTXY[i]->SetMarkerSize(2.0);
         hPEAroundForCTXY[i]->Draw();
         hPEAroundForCTXY[i]->Draw("same text90");
         // hPEAroundForCTXY[i]->Write();
